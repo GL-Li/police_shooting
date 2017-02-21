@@ -1,0 +1,335 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Black people are more likely to be killed in blue states than in read states
+\end_layout
+
+\begin_layout Section*
+Disparity ratio in blue and red states
+\end_layout
+
+\begin_layout Standard
+Let me explain what the title means: it means that the ratio of the probability
+ of black people to that of non-black people to be killed by police officers
+ is higher in blue states than in red states.
+ We are not comparing numbers killed per million population.
+ Instead we are looking at the ratio.
+ For example, if 30 out of one million black people and 10 out of one million
+ non-black people are killed, the ratio is 3.
+ The ratio = 3 tells that the blacks are three times as likely as non-blacks
+ to be killed by police.
+ Analysis of this shooting dataset of cases in years 2015-2016 compiled
+ by Washington Post shows that this disparity ratio is higher in blue states
+ than in red states.
+\end_layout
+
+\begin_layout Standard
+It is a big surpprise.
+ Generally speaking, blue states are less discriminatory against black people.
+ We would expect the ratio to be lower in blue states than in red states.
+ But the data point to the opposite direction.
+ 
+\end_layout
+
+\begin_layout Standard
+We used the percentage of vote for Obama in 2012 presidential election to
+ represent how "blue" a state is.
+ As Obama is a black people, this percentage better reflects how people
+ in that state feel towards black people than the most recent 2016 election.
+ 
+\end_layout
+
+\begin_layout Standard
+The following figures clearly show that black people are more likely to
+ be killed by police in blue states.
+ The bluer a state is, the more likely the blacks get killed.
+ While Obama got 90% vote in DC, all 8 killed by police are blacks.
+ (As of Dec.
+ 2, 2016, the ratio would be infinity; it is set to 10 to be plot in the
+ figure.
+ This and the following numbers will be different after each update of ```databa
+se.csv```.) Among the traditional blue states, Illinois tops the list where
+ the blacks are 7.6 times as likely as non-blacks to be killed.
+ Massachusetts is 5.2 times, Maryland 6.3 time, and New York 5.3 time.
+ California is the best but still 3.0 times, higher than the national average,
+ which is 2.2 times.
+ On the other hand, all those below the national average are red states,
+ including Texas, Alabama, Mississippi, and Tennessee.
+ In particular, the blacks are only 61% as likely as non-blacks to be killed
+ by police in Mississippi.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/all_geo_ratio.png
+	lyxscale 25
+	width 12cm
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Relationship between disparity ratio and vote for Obama in 2012 election.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Disparity ratios in urbanized area
+\end_layout
+
+\begin_layout Standard
+We should distinct urban area and rural area, as the police behavior are
+ significantly difference.
+ In addition, black people tend to concentrate in urban area.
+ The percentage of blacks in urban and rural area are different.
+ Figure 1 is for the disparity ration of the the entire state, which may
+ not be convinceing considering the difference in urban and rural area.
+ 
+\end_layout
+
+\begin_layout Subsection*
+Count shooting deaths in urban and rural area
+\end_layout
+
+\begin_layout Standard
+The dataset provides the city where each shooting case occured, without
+ telling it was an urban or rural area.
+ Using the 2010 census data, we will determine where is a case occured.
+\end_layout
+
+\begin_layout Standard
+According to 2010 census, people live in urbanized area, urban clusters
+ or rural areas.
+ An urbanized area is a contineous area of cities and towns where the total
+ population exceeds 50,000.
+ An urban cluster is an area of city and towns where the total population
+ is in the range of 2,500 to 50,000 and is isolated from other urban areas
+ or urban clusters.
+ Both urbanized area and urban clusters are urban area where the population
+ density is high.
+ The difference is their sizes.
+ Urban clusters can be considered as isolated towns and small cities.
+ All areas other than urban areas are rural areas.
+\end_layout
+
+\begin_layout Standard
+An example is shown in figure 2 for Georgia, where we can see if a shooting
+ location is in urbanized area, in urban clusters, or in rural area.
+ By eyeballing the figure, we count that out of 51 police shooting death
+ with known race, 10 happened in urban clusters, 5 in rural area, hence
+ 36 in urbanized area.
+ Using the same method, we can count the number of black people killed in
+ urbanized areas, urban clusters, and rural area for Georgia.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/good_block_level_all_killed_GA_map.png
+	lyxscale 30
+	width 12cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Location of police shooting of all known races in Georgia indicated by red
+ circles.
+ The circle area represents count of shooting.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Disparity ratio in urbanized area 
+\end_layout
+
+\begin_layout Standard
+We will only plot the disparity ratio in urbanized area for the state selected
+ in figure 1.
+ The majority shooting took place in urbanized area.
+ For many states, the cases are too few in urban clusters and rural area
+ to calculate a meaningful disparity ratio.
+ The percentage of votes for Obama in 2010 election is still for the entire
+ state instead of the urbanied area, as we are focusing on blue states and
+ red states at state level.
+\end_layout
+
+\begin_layout Standard
+Figure 3 shows that in urban area, black people are still more likely to
+ be killed by police officers in blue states than in red states.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/UA_ratio.png
+	lyxscale 25
+	width 12cm
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Disparity ratio in urbanized area for the same states selected in figure
+ 1.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We all know black people face less descrimination in blue states.
+ It is unfair to say that liberalism is the cause of the higher ratio.
+ But the data shows a clear correlation, which we cannot just simply ignore.
+ 
+\end_layout
+
+\end_body
+\end_document
