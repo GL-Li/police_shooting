@@ -8,12 +8,13 @@ library(ggmap)
 library(magrittr)
 
 # load functions for police shooting data
-source("~/Dropbox/dataset_analysis/kaggle_police_shooting_WSJ/A0_functions_prepare_shooting_data.R")
+source("~/Dropbox/dataset_analysis/police_shooting/A0_functions_prepare_shooting_data.R")
 
 # load functions for 2010 census data
 source("~/Dropbox/dataset_analysis/us_2010_census/A0_functions_extract_census_data.R")
 
-setwd("~/Dropbox/dataset_analysis/kaggle_police_shooting_WSJ")
+
+# disparity ration of each state ==============================================
 
 # define the function to make plot
 plot_ratio_vote <- function(choose_geo = "all_geo", 
@@ -153,3 +154,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
                  label = annotation)
     ggsave(filename = paste0("figures/", save_as), width = 9, height = 5.5)
 }
+
+
+# disparity ratio of states binned as red, neutral and blue states ============
+
