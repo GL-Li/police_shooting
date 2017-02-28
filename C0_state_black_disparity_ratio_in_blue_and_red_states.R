@@ -157,4 +157,79 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
 
 
 # disparity ratio of states binned as red, neutral and blue states ============
+get_binned_state_geo <- function(choose_geo = "all_geo") {
+    # This function returns population and people killed by police in
+    # binned red state (50% or less vote for obama in 2012 election) and blue 
+    # state (50% more vote for Obama) of the chosen geo-component. Disparity ratio
+    # also computed
+    
+    # args______________
+    # choose_geo: geo_component, choosen from "all_geo", "urban", "UA", "UC",
+    #     "rural".
+    
+    # number black people killed in the choose_geo
+    black_killed <- shooting_count_urban_rural("B") %>%
+        .[, black_killed := .[[choose_geo]]] %>%    # use variable as column name
+        .[, .(state, black_killed)]
+    
+    # number of all known races killed in the choose_geo
+    total_killed <- shooting_count_urban_rural("all") %>%
+        .[, total_killed := .[[choose_geo]]] %>%
+        .[, .(state, total_killed)]
+    
+    
+    # total and black population in each state in 2010 census
+    total_and_black_population <- get_total_geo_population(choose_geo) %>%
+        .[, .(state, total_population = total, 
+              black_population = black)]
+    
+    # percent of vote for Obama in each state in 2012 election
+    vote_obama <- vote_obama_2012() %>%
+        setnames(., "perc_vote", "vote_percent")
+    
+    # join all data for plot
+    data_plot <- total_killed[black_killed, on=.(state)] %>%
+        total_and_black_population[., on = "state"] %>%
+        vote_obama[., on = "state"]
+    
+    # bin by vote percent into three groups and add a new column for it
+    # red: vote_percent < 45%
+    # neutral: 45% <= vote_percent <= 55%
+    # blue: vote_percent > 55%
+    data_plot[, red_blue := cut(vote_percent, 
+                                breaks = c(0, 50, 100),
+                                labels = c("red", "blue"))]
+    
+    data_binned <- data_plot[, .(sum_total_population = sum(total_population),
+                                 sum_black_population = sum(black_population),
+                                 sum_total_killed = sum(total_killed),
+                                 sum_black_killed = sum(black_killed)),
+                             by = red_blue] %>%
+        .[, black_population_percent := round(100 * sum_black_population / sum_total_population, 2)] %>%
+        .[, black_killed_percent := round(100 * sum_black_killed / sum_total_killed, 2)] %>%
+        .[, black_killed_per_million := round(sum_black_killed / sum_black_population * 1e6, 2)] %>%
+        .[, non_black_killed_per_million := round((sum_total_killed -sum_black_killed) / 
+                                                      (sum_total_population -sum_black_population) * 1e6, 2)] %>%
+        .[, disparity_ratio := round(black_killed_per_million / non_black_killed_per_million, 2)] %>%
+        .[, geo_component := switch(choose_geo, 
+                                    "all_geo" = "all area",
+                                    "urban" = "urban area",
+                                    "UA" = "urbanized area",
+                                    "UC" = "urban cluster",
+                                    "rural" = "rural area")]
+}
+
+plot_binned_state_geo <- function() {
+    # plot number of people per million killed by police in binned blue and red
+    # states
+    all_geo <- get_binned_state_geo("all_geo")
+    UA <- get_binned_state_geo("UA")
+    UC <- get_binned_state_geo("UC")
+    rural <- get_binned_state_geo("rural")
+    data_plot <- rbindlist(list(all_geo, UA, UC, rural))
+    
+    ggplot(data_plot, aes(geo_component, ))
+    
+}
+
 
