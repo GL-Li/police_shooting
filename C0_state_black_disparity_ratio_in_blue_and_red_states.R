@@ -226,10 +226,84 @@ plot_binned_state_geo <- function() {
     UA <- get_binned_state_geo("UA")
     UC <- get_binned_state_geo("UC")
     rural <- get_binned_state_geo("rural")
-    data_plot <- rbindlist(list(all_geo, UA, UC, rural))
+    data_plot <- rbindlist(list(all_geo, UA, UC, rural)) %>%
+        # keep only needed columns
+        .[,.(red_blue, black_killed_per_million, non_black_killed_per_million, geo_component)] %>%
+        # convert to long table for plot
+        melt(measure.vars = c("black_killed_per_million", "non_black_killed_per_million"),
+             variable.name = "race",
+             value.name = "killed_per_million") %>%
+        # change values in column "race"
+        .[, race := ifelse(race == "black_killed_per_million", "black", "non-black")] %>%
+        # reorder rows 
+        setorder(-geo_component, red_blue, -race) %>%
+        # add new column for position
+        .[, x_position := c(18.8, 20.2, 21.8, 23.2,   # UA
+                            9.8, 11.2, 12.8, 14.2,   # UC
+                            0.8, 2.2, 3.8, 5.2,       # rural
+                            27.8, 29.2, 30.8, 32.2)]  # all area
     
-    ggplot(data_plot, aes(geo_component, ))
-    
+    ggplot(data_plot, aes(x_position, killed_per_million)) +
+        geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.25) +
+        scale_color_manual(values = c("red" = "red", "blue" = "blue")) +
+        scale_fill_manual(values = c("black" = "gray60", "non-black" = "white")) +
+        xlim(-0.5, 39) +
+        ylim(-6, 22.5) +
+        # scale_y_continuous(breaks = c(0, 10, 20)) +
+        # add text for all area
+        annotate("text", x = 30, y = -3, label = "All Area", hjust = 1) +
+        annotate("text", x = 31.5, y = -0.5, label = "blue\nstates", color = "blue", 
+                 hjust = 1, size = 3, lineheight = 0.7) +
+        annotate("text", x = 28.5, y = -0.5, label = "red\nstates", color = "red", 
+                 hjust = 1, size = 3, lineheight = 0.7) +
+        annotate("text", x = 31.5, y = 15, label = "3.3 : 1", color = "blue") +
+        annotate("text", x = 28.5, y = 12.8, label = "1.7 : 1", color = "red") +
+        annotate("text", x = 32.2, y = 0.5, label = "black", size = 2.5, hjust = 0) +
+        annotate("text", x = 30.8, y = 0.5, label = "non-black", size = 2.5, hjust = 0) +
+        annotate("text", x = 29.2, y = 0.5, label = "black", size = 2.5, hjust = 0) +
+        annotate("text", x = 27.8, y = 0.5, label = "non-black", size = 2.5, hjust = 0) +
+        
+        # add text for urbanized area
+        annotate("text", x = 21, y = -3, label = "Urban Area\npopulation\n> 50000", 
+                 hjust = 1, lineheight = 0.9) +
+        # annotate("text", x = 22.5, y = -0.5, label = "blue", color = "blue", hjust = 1) +
+        # annotate("text", x = 19.5, y = -0.5, label = "red", color = "red", hjust = 1) +
+        annotate("text", x = 22.5, y = 15.3, label = "3.1 : 1", color = "blue") +
+        annotate("text", x = 19.5, y = 15.5, label = "1.9 : 1", color = "red") +
+        # add text for urban clusters
+        annotate("text", x = 12, y = -3, label = "Urban Area\npopulation\n< 50000", 
+                 hjust = 1, lineheight = 0.9) +
+        # annotate("text", x = 13.5, y = -0.5, label = "blue", color = "blue", hjust = 1) +
+        # annotate("text", x = 10.5, y = -0.5, label = "red", color = "red", hjust = 1) +
+        annotate("text", x = 13.5, y = 22.2, label = "4.3 : 1", color = "blue") +
+        annotate("text", x = 10.5, y = 12, label = "0.8 : 1", color = "red") +
+        # add text for rural area
+        annotate("text", x = 3, y = -3, label = "Rural Area", hjust = 1) +
+        annotate("text", x = 4.5, y = 2.7, label = "0.6 : 1", color = "blue", hjust = 0) +
+        annotate("text", x = 1.5, y = 4.3, label = "0.3 : 1", color = "red", hjust = 0) +
+        # annotate("text", x = 4.5, y = -0.5, label = "blue", color = "blue", hjust = 1) +
+        # annotate("text", x = 1.5, y = -0.5, label = "red", color = "red", hjust = 1) +
+        # add a fake x-axis
+        annotate("text", x = 38, y = 10, size = 3,
+                 label = "Count of fatal police shooting per million population") +
+        annotate("text", x = 37, y = -0, hjust = 0.5, label = "0", size = 3) +
+        annotate("text", x = 37, y = 20, hjust = 0.5, label = "20", size = 3) +
+        annotate("segment", x = 35, xend = 35, y = 0, yend = 20, size = 0.3) +
+        annotate("segment", x = 35, xend = 36, y = 0, yend = 0, size = 0.3) +
+        annotate("segment", x = 35, xend = 36, y = 20, yend = 20, size = 0.3) +
+        annotate("segment", x = 35, xend = 36, y = 10, yend = 10, size = 0.3) +
+        annotate("segment", x = 35, xend = 35.5, y = 5, yend = 5, size = 0.3) +
+        annotate("segment", x = 35, xend = 35.5, y = 15, yend = 15, size = 0.3) +
+        # switch x and y axis for better looking
+        coord_flip() +
+        theme(axis.text = element_blank(),
+              axis.ticks = element_blank(),
+              axis.title = element_blank(),
+              legend.position = "none",
+              panel.grid = element_blank(),
+              panel.background = element_blank()) 
+    # save plot
+    ggsave(filename = "figures/geo_disparity.png", width = 6, height = 4)
 }
 
 
