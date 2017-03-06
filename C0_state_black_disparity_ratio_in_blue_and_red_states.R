@@ -317,11 +317,12 @@ plot_binned_state_geo <- function() {
     ggsave(filename = "figures/geo_disparity.png", width = 6, height = 4)
 }
 
-plot_binned_state_geo()
+#plot_binned_state_geo()
 
 plot_disparity_ratio_geo <- function() {
     # plot number of people per million killed by police in binned blue and red
     # states
+    
     all_geo <- get_binned_state_geo("all_geo")
     UA <- get_binned_state_geo("UA")
     UC <- get_binned_state_geo("UC")
@@ -330,7 +331,7 @@ plot_disparity_ratio_geo <- function() {
         # keep only needed columns
         .[,.(red_blue, sum_black_killed, disparity_ratio, geo_component)] %>%
         # plot "blue" ahead of "red"
-        .[, red_blue := factor(red_blue, levels = c("blue", "red"))] %>%
+        .[, red_blue := factor(red_blue, levels = c("red", "blue"))] %>%
         # use numbers for x is easier to handle than factors
         .[, x_position := as.integer(red_blue)] %>%
         .[red_blue == "blue", blue_label := disparity_ratio] %>%
@@ -348,41 +349,43 @@ plot_disparity_ratio_geo <- function() {
                                       "rural area" = "cyan")) +
         
         # label disparity ratio numbers
-        geom_text(aes(label = red_label), hjust = -0.2, size = 3.2) +
-        geom_text(aes(label = blue_label), hjust = 1.2, size = 3.2) +
+        geom_text(aes(label = red_label), hjust = 1.2, size = 3.2) +
+        geom_text(aes(label = blue_label), hjust = -0.2, size = 3.2) +
         
         # label urban, rural area
-        annotate("text", x = 0.85, y = 4.27, label = "urban area\n< 50000", 
-                 hjust = 1, vjust = 0.5, lineheight = 0.8, color = "orange") +
-        annotate("text", x = 0.85, y = 3.26, label = "all area",
-                 hjust = 1, vjust = 0.2, color = "black") +
-        annotate("text", x = 0.85, y = 3.07, label = "urban area\n> 50000", 
-                 hjust = 1, vjust = 0.8, lineheight = 0.8, color = "purple") +
-        annotate("text", x = 0.85, y = 0.57, label = "rural area", 
-                 hjust = 1, vjust = 0.5, lineheight = 0.8, color = "cyan") +
+        annotate("text", x = 0.87, y = 0.84, label = "urban area\n< 50000", 
+                 hjust = 1, vjust = 0.5, lineheight = 0.8, color = "orange", size = 3.5) +
+        annotate("text", x = 0.87, y = 1.68, label = "all area",
+                 hjust = 1, vjust = 0.7, color = "black", size = 3.5) +
+        annotate("text", x = 0.87, y = 1.94, label = "urban area\n> 50000", 
+                 hjust = 1, vjust = 0.3, lineheight = 0.8, color = "purple", size = 3.5) +
+        annotate("text", x = 0.87, y = 0.27, label = "rural area", 
+                 hjust = 1, vjust = 0.5, lineheight = 0.8, color = "cyan", size = 3.5) +
         
         # add on blue and red states label
-        annotate("text", x = 1, y = -0.1, label = "blue\nstates", color = "blue", 
-                 lineheight = 0.7, size = 5) +
-        annotate("text", x = 2, y = -0.1, label = "red\nstates", color = "red", 
-                 lineheight = 0.7, size = 5) +
+        annotate("text", x = 2, y = -0.1, label = "blue\nstates", color = "blue", 
+                 lineheight = 0.7, size = 4) +
+        annotate("text", x = 1, y = -0.1, label = "red\nstates", color = "red", 
+                 lineheight = 0.7, size = 4) +
         
         # add verticle lines for blue and red states
-        annotate("segment", x = 1, xend = 1, y = 0.2, yend = 4.4, linetype = 3, 
-                 color = "blue", size = 0.2) +
         annotate("segment", x = 2, xend = 2, y = 0.2, yend = 4.4, linetype = 3, 
+                 color = "blue", size = 0.2) +
+        annotate("segment", x = 1, xend = 1, y = 0.2, yend = 2.1, linetype = 3, 
                  color = "red", size = 0.2) +
         
         # add description
         ggtitle(paste0("Fatal police shooting: more discrimination against black",
                        "\npeople in blue states than in red states")) +
-        annotate("text", x = 0.65, y = 7, vjust = 0.9, hjust = 0, lineheight = 0.9,
-                 label = paste0("In red states, black people are 1.68 times as likely to be killed\n",
-                                "by police as non-black people.\n\n", 
-                                "In blue states, this disparity ratio is 3.26, doubling that in red states.\n\n",
-                                "In large urban area with more than 50000 population, which\n", 
-                                "accounts for 92% of black people killed, the disparity ratio is\n",
-                                "3.07 in blue states and 1.94 in red states.")) +
+        annotate("text", x = 0.65, y = 7, vjust = 0.9, hjust = 0.00,  lineheight = 0.9, size = 3.5,
+                 label = paste0("In red states, black people are 1.68 times as likely to be killed by\n",
+                                "police as non-black people.\n\n",
+                                "This disparity ratio doubles to 3.26 in blue states.\n\n",
+                                "In large urban area with more than 50000 population, which accounts\n",
+                                "for 92% of black people killed, the disparity ratio is 1.94 in red states\n",
+                                "and 3.07 in blue states.")) +
+        annotate("text", x = 0.65, y = 4, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE,
+                 label = 'bold("How many times black people are as likely to be\nfatally shot by police as non-black people?")') +
 
         theme(plot.title = element_text(size = 12, face = "bold"),
               axis.text = element_blank(),
