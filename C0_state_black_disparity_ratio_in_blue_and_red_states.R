@@ -152,7 +152,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         scale_y_continuous(breaks = seq(0, 11, 2)) +
         annotate("text", x = 33, y = 9.5, hjust = 0, alpha = 0.5,
                  label = annotation)
-    ggsave(filename = paste0("figures/", save_as), width = 9, height = 5.5)
+    ggsave(filename = paste0("figures_temp/", save_as), width = 9, height = 5.5)
 }
 
 
@@ -314,7 +314,7 @@ plot_binned_state_geo <- function() {
               panel.grid = element_blank(),
               panel.background = element_blank()) 
     # save plot
-    ggsave(filename = "figures/geo_disparity.png", width = 6, height = 4)
+    ggsave(filename = "figures_temp/geo_disparity.png", width = 6, height = 4)
 }
 
 #plot_binned_state_geo()
@@ -385,7 +385,7 @@ plot_disparity_ratio_geo <- function() {
                                 "for 92% of black people killed, the disparity ratio is 1.94 in red states\n",
                                 "and 3.07 in blue states.")) +
         annotate("text", x = 0.65, y = 4, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE,
-                 label = 'bold("How many times black people are as likely to be\nfatally shot by police as non-black people?")') +
+                 label = 'bold("How many times are black people as likely to be\nfatally shot by police as non-black people?")') +
 
         theme(plot.title = element_text(size = 12, face = "bold"),
               axis.text = element_blank(),
@@ -394,6 +394,6 @@ plot_disparity_ratio_geo <- function() {
               legend.position = "none",
               panel.grid = element_blank(),
               panel.background = element_blank())               
-    ggsave(filename = "figures/disparity_ratio_geo.png", width = 5, height = 5)
+    ggsave(filename = "figures_temp/disparity_ratio_geo.png", width = 5, height = 5)
 }
-
+plot_disparity_ratio_geo()
