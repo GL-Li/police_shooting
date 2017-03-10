@@ -317,7 +317,7 @@ plot_binned_state_geo <- function() {
     ggsave(filename = "figures_temp/geo_disparity.png", width = 6, height = 4)
 }
 
-#plot_binned_state_geo()
+plot_binned_state_geo()
 
 plot_disparity_ratio_geo <- function() {
     # plot number of people per million killed by police in binned blue and red
@@ -341,7 +341,7 @@ plot_disparity_ratio_geo <- function() {
     ggplot(data_plot, aes(x_position, disparity_ratio, group = geo_component, color = geo_component)) +
         geom_point(size = 2) +
         geom_line() + 
-        ylim(-0.1, 7) +
+        ylim(-0.1, 4.5) +   # change to 7 if add title and description
         xlim(0.65, 2.1) +
         scale_color_manual(values = c("all area" = "black",
                                       "urbanized area" = "purple",
@@ -375,15 +375,15 @@ plot_disparity_ratio_geo <- function() {
                  color = "red", size = 0.2) +
         
         # add description
-        ggtitle(paste0("Fatal police shooting: more discrimination against black",
-                       "\npeople in blue states than in red states")) +
-        annotate("text", x = 0.65, y = 7, vjust = 0.9, hjust = 0.00,  lineheight = 0.9, size = 3.5,
-                 label = paste0("In red states, black people are 1.68 times as likely to be killed by\n",
-                                "police as non-black people.\n\n",
-                                "This disparity ratio doubles to 3.26 in blue states.\n\n",
-                                "In large urban area with more than 50000 population, which accounts\n",
-                                "for 92% of black people killed, the disparity ratio is 1.94 in red states\n",
-                                "and 3.07 in blue states.")) +
+        # ggtitle(paste0("Fatal police shooting: more discrimination against black",
+        #                "\npeople in blue states than in red states")) +
+        # annotate("text", x = 0.65, y = 7, vjust = 0.9, hjust = 0.00,  lineheight = 0.9, size = 3.5,
+        #          label = paste0("In red states, black people are 1.68 times as likely to be killed by\n",
+        #                         "police as non-black people.\n\n",
+        #                         "This disparity ratio doubles to 3.26 in blue states.\n\n",
+        #                         "In large urban area with more than 50000 population, which accounts\n",
+        #                         "for 92% of black people killed, the disparity ratio is 1.94 in red states\n",
+        #                         "and 3.07 in blue states.")) +
         annotate("text", x = 0.65, y = 4, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE,
                  label = 'bold("How many times are black people as likely to be\nfatally shot by police as non-black people?")') +
 
@@ -394,6 +394,6 @@ plot_disparity_ratio_geo <- function() {
               legend.position = "none",
               panel.grid = element_blank(),
               panel.background = element_blank())               
-    ggsave(filename = "figures_temp/disparity_ratio_geo.png", width = 5, height = 5)
+    ggsave(filename = "figures_temp/disparity_ratio_geo.png", width = 5, height = 3)
 }
 plot_disparity_ratio_geo()
