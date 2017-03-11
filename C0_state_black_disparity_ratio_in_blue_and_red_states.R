@@ -317,6 +317,82 @@ plot_binned_state_geo <- function() {
     ggsave(filename = "figures_temp/geo_disparity.png", width = 6, height = 4)
 }
 
+
+plot_binned_state_geo_vetical <- function() {
+    # plot number of people per million killed by police in binned blue and red
+    # states
+    all_geo <- get_binned_state_geo("all_geo")
+    UA <- get_binned_state_geo("UA")
+    UC <- get_binned_state_geo("UC")
+    rural <- get_binned_state_geo("rural")
+    data_plot <- rbindlist(list(all_geo, UA, UC, rural)) %>%
+        # keep only needed columns
+        .[,.(red_blue, black_killed_per_million, non_black_killed_per_million, geo_component)] %>%
+        # convert to long table for plot
+        melt(measure.vars = c("black_killed_per_million", "non_black_killed_per_million"),
+             variable.name = "race",
+             value.name = "killed_per_million") %>%
+        # change values in column "race"
+        .[, race := ifelse(race == "black_killed_per_million", "black", "non-\nblack")] %>%
+        # reorder levels of geo_component
+        .[, geo_component := factor(geo_component, levels = c("all area", "urbanized area",
+                                                               "urban cluster", "rural area"))] %>%
+        # reorder rows 
+        setorder(geo_component, red_blue, race) %>%
+        # add new column for position
+        .[, x_position := c(1, 3, 5.2, 7.2,       # all area
+                            11, 13, 15.2, 17.2,   # UA
+                            20, 22, 24.2, 26.2,   # UC
+                            29, 31, 33.2, 35.2)]  # all area
+    
+    # state label data table
+    state_label <- data.table(x_position = c(2, 6.2, 12, 16.2, 21, 25.2, 30, 34.2),
+                              label = c("red states", "blue states"),
+                              color = c("red", "blue"))
+    geo_label <- data.table(x_position = c(4.1, 14.1, 23.1, 32.1),
+                            label = c("All Area", 
+                                      "Urban Area\npopulation > 50000",
+                                      "Urban Area\npopulation < 50000",
+                                      "Rural Area"),
+                            color = c("black", "purple", "orange", "cyan"))
+    
+    ggplot(data_plot, aes(x_position, killed_per_million)) +
+        geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.9) +
+        scale_fill_manual(values = c("black" = "gray60", "non-black" = "white")) +
+        xlim(0, 36.5) +
+        ylim(-6.5, 30) +
+        
+        # add state label
+        geom_text(data = state_label, aes(x_position, -1, label = label, color = color),
+                  size = 3, lineheight = 0.7) +
+        # add geo label
+        geom_text(data = geo_label, aes(x_position, -3, label = label, color = color), 
+                  size = 3.5, vjust = 1, lineheight = 0.7) +
+        # add black and non-black label
+        geom_text(aes(x_position, 0.2, label = race), size = 2.5, lineheight = 0.7, vjust = 0) +
+        # add number label
+        geom_text(aes(x = x_position, y = killed_per_million + 0.2,
+                      label = killed_per_million), vjust = 0, hjust = 0.5, size = 2.8) +
+        scale_color_identity() +
+        
+        # add a vertical line to split all area and other areas
+        annotate("segment", x = 9.1, xend = 9.1, y = -5, yend = 20.5, linetype = 2, size = 0.2) +
+
+        # add a fake title
+        annotate("text", x = 0, y = 23, size = 3.5, hjust = 0,
+                 label = "Count of fatal police shooting per million population") +
+
+        theme(plot.title = element_text(size = 10, face = "bold"),
+              axis.text = element_blank(),
+              axis.ticks = element_blank(),
+              axis.title = element_blank(),
+              legend.position = "none",
+              panel.grid = element_blank(),
+              panel.background = element_blank()) 
+    # save plot
+    ggsave(filename = "figures_temp/geo_disparity_vertical.png", width = 6, height = 5)
+}
+
 plot_binned_state_geo()
 
 plot_disparity_ratio_geo <- function() {
