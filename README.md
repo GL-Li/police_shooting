@@ -6,8 +6,8 @@ Over 1000 civilians are fatally shot by police officers in the United States eac
 
 If racism does play a role, we would expect smaller disparity in blue states than in red states, as black people are believed to face less discrimination in blue states. To examine this theory, we divide the 50 states and DC into two groups, blue states and red states, and calcualte the disparity in the two groups using the Washington Post database. 
 
-Surprisingly, the calculation shows that the disparity is much larger in blue states than red states. In red states, black people are **1.68** times as likely to be killed by police as non-black people. This disparity ratio doubles to **3.26** in blue states. In large urban area with more than 50000 population, which accounts for 92% of black people killed, the disparity ratio is <span style="color:purple">**1.94**</span> in red states and <span style="color:purple">**3.07**</span> in blue states.
+Surprisingly, the calculation shows that the disparity is much larger in blue states than red states. In red states, black people are <span style="color:red">**1.68**</span> times as likely to be killed by police as non-black people. This disparity ratio doubles to <span style="color:blue">**3.26**</span> in blue states. In large urban area with more than 50000 population, which accounts for 92% of black people killed, the disparity ratio is <span style="color:red">**1.94**</span> in red states and <span style="color:blue">**3.07**</span> in blue states.
 
 If we use the disparity as a measure of racism, blue states are more discriminative against black people than red states. This is against intuition and public perception. Why? This is a job for sociologist. 
 
-<img src="figures/disparity_ratio_geo.png" alt="disparity ratio" style="width: 500px;"/>
+<img src="figures/geo_disparity_vertical.png" alt="disparity ratio" style="width: 600px;"/>
