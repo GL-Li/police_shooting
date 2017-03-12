@@ -327,7 +327,7 @@ plot_binned_state_geo_vetical <- function() {
     rural <- get_binned_state_geo("rural")
     data_plot <- rbindlist(list(all_geo, UA, UC, rural)) %>%
         # keep only needed columns
-        .[,.(red_blue, black_killed_per_million, non_black_killed_per_million, geo_component)] %>%
+        .[, .(red_blue, black_killed_per_million, non_black_killed_per_million, geo_component)] %>%
         # convert to long table for plot
         melt(measure.vars = c("black_killed_per_million", "non_black_killed_per_million"),
              variable.name = "race",
@@ -343,30 +343,41 @@ plot_binned_state_geo_vetical <- function() {
         .[, x_position := c(1, 3, 5.2, 7.2,       # all area
                             11, 13, 15.2, 17.2,   # UA
                             20, 22, 24.2, 26.2,   # UC
-                            29, 31, 33.2, 35.2)]  # all area
+                            29, 31, 33.2, 35.2)] %>%  # all area
+        # add alpha to mute UC and rural area
+        .[, alpha := c(rep(1, 8), rep(0.3, 8))]
     
-    # state label data table
+    # label data tables
     state_label <- data.table(x_position = c(2, 6.2, 12, 16.2, 21, 25.2, 30, 34.2),
                               label = c("red states", "blue states"),
                               color = c("red", "blue"))
     geo_label <- data.table(x_position = c(4.1, 14.1, 23.1, 32.1),
                             label = c("All Area", 
-                                      "Urban Area\npopulation > 50000",
-                                      "Urban Area\npopulation < 50000",
+                                      "Large Urban Area\npopulation > 50000",
+                                      "Small Urban Area\npopulation < 50000",
                                       "Rural Area"),
                             color = c("black", "purple", "orange", "cyan"))
     
+    # disparity data table
+    data_disparity_plot <- rbindlist(list(all_geo, UA, UC, rural)) %>%
+        .[, .(red_blue, disparity_ratio, geo_component)] %>%
+        .[, geo_component := factor(geo_component, levels = c("all area", "urbanized area",
+                                                              "urban cluster", "rural area"))] %>%
+        setorder(geo_component, red_blue) %>%
+        .[, x_position := c(2, 6.2, 12, 16.2, 21, 25.2, 30, 34.2)] %>%
+        .[, color := c("black", "black", "purple", "purple", "orange", "orange", "cyan", "cyan")]
+    
     ggplot(data_plot, aes(x_position, killed_per_million)) +
         geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.9) +
-        scale_fill_manual(values = c("black" = "gray60", "non-black" = "white")) +
+        scale_fill_manual(values = c("black" = "gray70", "non-black" = "white")) +
         xlim(0, 36.5) +
-        ylim(-6.5, 30) +
+        ylim(-1.5, 43) +
         
         # add state label
-        geom_text(data = state_label, aes(x_position, -1, label = label, color = color),
-                  size = 3, lineheight = 0.7) +
+        geom_text(data = state_label, aes(x_position, y = -0.5, label = label, color = color),
+                  size = 3, lineheight = 0.7, vjust = 1) +
         # add geo label
-        geom_text(data = geo_label, aes(x_position, -3, label = label, color = color), 
+        geom_text(data = geo_label, aes(x_position, y = 40, label = label), 
                   size = 3.5, vjust = 1, lineheight = 0.7) +
         # add black and non-black label
         geom_text(aes(x_position, 0.2, label = race), size = 2.5, lineheight = 0.7, vjust = 0) +
@@ -376,21 +387,49 @@ plot_binned_state_geo_vetical <- function() {
         scale_color_identity() +
         
         # add a vertical line to split all area and other areas
-        annotate("segment", x = 9.1, xend = 9.1, y = -5, yend = 20.5, linetype = 2, size = 0.2) +
+        annotate("segment", x = 9.1, xend = 9.1, y = 0, yend = 20.5, linetype = 2, size = 0.2) +
+        annotate("segment", x = 18.6, xend = 18.6, y = 0, yend = 20.5, linetype = 2, size = 0.2) +
+        annotate("segment", x = 27.6, xend = 27.6, y = 0, yend = 20.5, linetype = 2, size = 0.2) +
+        
 
         # add a fake title
-        annotate("text", x = 0, y = 23, size = 3.5, hjust = 0,
-                 label = "Count of fatal police shooting per million population") +
-
+        annotate("text", x = 0, y = 23, size = 3.5, hjust = 0, parse = TRUE,
+                 label = 'bold("Number of fatal police shooting per million population of black and non-black people")') +
+        
+        # add disparity ratio, magnify and move y axis for better contrast
+        geom_line(data = data_disparity_plot, size = 1, 
+                  aes(x = x_position, y = 2 * disparity_ratio + 26, group = geo_component)) +
+        geom_point(data = data_disparity_plot, size = 3,
+                   aes(x = x_position, y = 2 * disparity_ratio + 26, color = red_blue)) +
+        geom_text(data = data_disparity_plot, size = 3, hjust = 1,
+                  aes(x = x_position, y = 2 * disparity_ratio + 27, label = disparity_ratio, color = red_blue)) +
+        annotate("segment", x = 9.1, xend = 9.1, y = 25, yend = 36, linetype = 2, size = 0.2) +
+        annotate("segment", x = 18.6, xend = 18.6, y = 25, yend = 36, linetype = 2, size = 0.2) +
+        annotate("segment", x = 27.6, xend = 27.6, y = 25, yend = 36, linetype = 2, size = 0.2) +
+        
+        annotate("text", x = 0, y = 43, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE,
+                 label = 'bold("How many times black people are as likely to be fatally shot by police as non-black people\nin       and         states")') +
+        # sad geom_text not good at text color, have to this way
+        annotate("text", x = 1.6, y = 42.7, color = "red", parse = TRUE, size = 3.5,
+                 label = 'bold("red")', vjust = 0) +
+        annotate("text", x = 5.2, y = 42.7, color = "blue", parse = TRUE, size = 3.5,
+                 label = 'bold("blue")', vjust = 0) + 
+        
+        # shade small urban area and rural area
+        annotate("rect", xmin = 18.5, xmax = 36.5, ymin = 25, ymax = 41, fill = "white", alpha = 0.7) +
+        annotate("rect", xmin = 18.5, xmax = 36.5, ymin = -1.5, ymax = 22.3, fill = "white", alpha = 0.7) +
+        
         theme(plot.title = element_text(size = 10, face = "bold"),
               axis.text = element_blank(),
               axis.ticks = element_blank(),
               axis.title = element_blank(),
               legend.position = "none",
               panel.grid = element_blank(),
-              panel.background = element_blank()) 
+              panel.background = element_blank(),
+              plot.margin = unit(c(2, 0, -5, 0), "mm"))  # negative number set margin
+    
     # save plot
-    ggsave(filename = "figures_temp/geo_disparity_vertical.png", width = 6, height = 5)
+    ggsave(filename = "figures_temp/geo_disparity_vertical.png", width = 6.5, height = 6)
 }
 
 plot_binned_state_geo()
