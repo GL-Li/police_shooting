@@ -74,12 +74,13 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         setnames(., "perc_vote", "vote_percent")
     
     ###
-    ### join all data for plot
+    ### join all data for plot and then keep only selected states
     ###
     data_plot <- black_killed[total_killed, on=.(state)] %>%
         .[, black_killed_percent := round(black_killed / total_killed, 3) * 100] %>%
         black_population[., on = "state"] %>%
-        vote_obama[., on = "state"]
+        vote_obama[., on = "state"] %>%
+        .[state %in% selected_states]
     
     ###
     ### add disparity ratio for plot
@@ -99,11 +100,11 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     ###
     # set up default arguments
     geo_name <- switch(choose_geo,
-                       all_geo = "entire state",
-                       urban = "urban areas",
-                       UA = "urbanized areas",
-                       UC = "urban clusters",
-                       rural = "rural areas")
+                       all_geo = "all area",
+                       urban = "urban area",
+                       UA = "large urban area",     # urbanized area
+                       UC = "small urban area",     # urban cluster
+                       rural = "rural area")
     if (title == "default") {
         title <- paste0("Relationship between the disparity ratio in ", geo_name, 
                         " and vote for Obama in 2012 election")
@@ -112,14 +113,19 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         ylabel <- paste0("Disparity ratio in ", geo_name)
     }
 
-    # prepare breaks for scale_size and scale fill
+    # prepare breaks for scale_size and scale fill, from min to max in real plot
     if (all(size_breaks == "default")) {
-        size_breaks <- floor(10 * max(data_plot[["black_population"]]) / 1e6) *
-            c(0.01, 0.02, 0.05, 0.1)
+        # using ceiling and floor to make sure breaks are in real data range. not shown otherwise
+        mini = ceiling(min(data_plot[["black_population"]]) / 1e5) / 10
+        maxi = floor(max(data_plot[["black_population"]]) / 1e5) / 10
+        dif = maxi - mini
+        size_breaks <- c(mini, round(mini+0.3*dif, 1), round(mini+0.6*dif, 1), maxi)
     }
     if (all(fill_breaks == "default")) {
-        fill_breaks <- round(max(data_plot[["black_killed"]]) * c(0.1, 0.2, 0.5, 1)) %>%
-            unique
+        mini = min(data_plot[["black_killed"]])
+        maxi = max(data_plot[["black_killed"]])
+        dif = maxi - mini
+        fill_breaks <- c(mini, round(mini+0.3*dif), round(mini+0.6*dif), maxi)
     }
     if (annotation == "default") {
         annotation <- paste("Only showing data of states with more than 3 black", 
@@ -128,13 +134,16 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     }
     
     # only plot the selected state
-    ggplot(data_plot[state %in% selected_states], aes(vote_percent, ratio)) +
+    ggplot(data_plot, aes(vote_percent, ratio)) +
         geom_point(aes(size = black_population/1e6, fill = black_killed), pch = 21) +
+        # scale legends
         scale_size_area(breaks = size_breaks,
-                        guide = guide_legend(title = "black\npopulation\n(million)",
+                        guide = guide_legend(order = 1,   # first legend
+                                             title = "black\npopulation\n(million)",
                                              override.aes = list(shape = 1))) +
         scale_fill_gradient(low = "white", high = "black", breaks = fill_breaks,
-                            guide = guide_legend(title = "number of\nblacks killed", 
+                            guide = guide_legend(order = 2,   # second legend
+                                                 title = "number of\nblacks killed", 
                                                  override.aes = list(size=4))) +
         geom_text_repel(aes(label = state), size = 4) +
         geom_smooth(method = "lm", se = FALSE, color = "black", linetype = 2, size = 0.2) +
@@ -219,107 +228,9 @@ get_binned_state_geo <- function(choose_geo = "all_geo") {
                                     "rural" = "rural area")]
 }
 
-plot_binned_state_geo <- function() {
-    # plot number of people per million killed by police in binned blue and red
-    # states
-    all_geo <- get_binned_state_geo("all_geo")
-    UA <- get_binned_state_geo("UA")
-    UC <- get_binned_state_geo("UC")
-    rural <- get_binned_state_geo("rural")
-    data_plot <- rbindlist(list(all_geo, UA, UC, rural)) %>%
-        # keep only needed columns
-        .[,.(red_blue, black_killed_per_million, non_black_killed_per_million, geo_component)] %>%
-        # convert to long table for plot
-        melt(measure.vars = c("black_killed_per_million", "non_black_killed_per_million"),
-             variable.name = "race",
-             value.name = "killed_per_million") %>%
-        # change values in column "race"
-        .[, race := ifelse(race == "black_killed_per_million", "black", "non-black")] %>%
-        # reorder rows 
-        setorder(-geo_component, red_blue, -race) %>%
-        # add new column for position
-        .[, x_position := c(16.8, 18.2, 19.8, 21.2,   # UA
-                            8.8, 10.2, 11.8, 13.2,   # UC
-                            0.8, 2.2, 3.8, 5.2,       # rural
-                            27.8, 29.2, 30.8, 32.2)]  # all area
-    
-    ggplot(data_plot, aes(x_position, killed_per_million)) +
-        geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.25) +
-        scale_color_manual(values = c("red" = "red", "blue" = "blue")) +
-        scale_fill_manual(values = c("black" = "gray60", "non-black" = "white")) +
-        xlim(-0.5, 39) +
-        ylim(-5, 22.5) +
-        ggtitle("Black people are more likely to be fatally shot by police in blue states than in red states") +
-        
-        # add text for all area
-        annotate("text", x = 30, y = -5, label = "All Area", hjust = 0, size = 3.5) +
-        annotate("text", x = 31.5, y = -0.5, label = "blue\nstates", color = "blue", 
-                 hjust = 1, size = 3, lineheight = 0.7) +
-        annotate("text", x = 28.5, y = -0.5, label = "red\nstates", color = "red", 
-                 hjust = 1, size = 3, lineheight = 0.7) +
-        annotate("text", x = 31.5, y = 15, label = "3.3 : 1", color = "blue") +
-        annotate("text", x = 28.5, y = 12.8, label = "1.7 : 1", color = "red") +
-        annotate("text", x = 32.2, y = 0.5, label = "black", size = 2.5, hjust = 0) +
-        annotate("text", x = 30.8, y = 0.5, label = "non-black", size = 2.5, hjust = 0) +
-        annotate("text", x = 29.2, y = 0.5, label = "black", size = 2.5, hjust = 0) +
-        annotate("text", x = 27.8, y = 0.5, label = "non-black", size = 2.5, hjust = 0) +
-        
-        # divide into urban and rural area
-        annotate("segment", x = 25, xend = 25, y = -5, yend = 22.5, linetype = 2, size = 0.1) +
-        annotate("text", x = 24, y = -5, hjust = 0, size = 3.5,
-                 label = "Divide into large urban, small urban, and rural areas") +
-        
-        # add text for urbanized area
-        annotate("text", x = 19, y = -0.5, label = "Urban Area\npopulation\n> 50000", 
-                 hjust = 1, lineheight = 0.9, size = 3.2) +
-        # annotate("text", x = 22.5, y = -0.5, label = "blue", color = "blue", hjust = 1) +
-        # annotate("text", x = 19.5, y = -0.5, label = "red", color = "red", hjust = 1) +
-        annotate("text", x = 20.5, y = 15.3, label = "3.1 : 1", color = "blue") +
-        annotate("text", x = 17.5, y = 15.5, label = "1.9 : 1", color = "red") +
-        
-        # add text for urban clusters
-        annotate("text", x = 11, y = -0.5, label = "Urban Area\npopulation\n< 50000", 
-                 hjust = 1, lineheight = 0.9, size = 3.2) +
-        # annotate("text", x = 13.5, y = -0.5, label = "blue", color = "blue", hjust = 1) +
-        # annotate("text", x = 10.5, y = -0.5, label = "red", color = "red", hjust = 1) +
-        annotate("text", x = 12.5, y = 22.2, label = "4.3 : 1", color = "blue") +
-        annotate("text", x = 9.5, y = 12, label = "0.8 : 1", color = "red") +
-        
-        # add text for rural area
-        annotate("text", x = 3, y = -0.5, label = "Rural Area", hjust = 1, size = 3.2) +
-        annotate("text", x = 4.5, y = 2.7, label = "0.6 : 1", color = "blue", hjust = 0) +
-        annotate("text", x = 1.5, y = 4.3, label = "0.3 : 1", color = "red", hjust = 0) +
-        # annotate("text", x = 4.5, y = -0.5, label = "blue", color = "blue", hjust = 1) +
-        # annotate("text", x = 1.5, y = -0.5, label = "red", color = "red", hjust = 1) +
-        
-        # add a fake x-axis
-        annotate("text", x = 38, y = 10, size = 3,
-                 label = "Count of fatal police shooting per million population") +
-        annotate("text", x = 37, y = -0, hjust = 0.5, label = "0", size = 3) +
-        annotate("text", x = 37, y = 20, hjust = 0.5, label = "20", size = 3) +
-        annotate("segment", x = 35, xend = 35, y = 0, yend = 20, size = 0.3) +
-        annotate("segment", x = 35, xend = 36, y = 0, yend = 0, size = 0.3) +
-        annotate("segment", x = 35, xend = 36, y = 20, yend = 20, size = 0.3) +
-        annotate("segment", x = 35, xend = 36, y = 10, yend = 10, size = 0.3) +
-        annotate("segment", x = 35, xend = 35.5, y = 5, yend = 5, size = 0.3) +
-        annotate("segment", x = 35, xend = 35.5, y = 15, yend = 15, size = 0.3) +
-        
-        # switch x and y axis for better looking
-        coord_flip() +
-        theme(plot.title = element_text(size = 10, face = "bold"),
-              axis.text = element_blank(),
-              axis.ticks = element_blank(),
-              axis.title = element_blank(),
-              legend.position = "none",
-              panel.grid = element_blank(),
-              panel.background = element_blank()) 
-    # save plot
-    ggsave(filename = "figures_temp/geo_disparity.png", width = 6, height = 4)
-}
 
-
-plot_binned_state_geo_vetical <- function() {
-    # plot number of people per million killed by police in binned blue and red
+plot_grouped_state_disparity <- function() {
+    # plot disparity ration and number of people per million killed by police in grouped blue and red
     # states
     all_geo <- get_binned_state_geo("all_geo")
     UA <- get_binned_state_geo("UA")
@@ -380,9 +291,10 @@ plot_binned_state_geo_vetical <- function() {
         geom_text(data = geo_label, aes(x_position, y = 40, label = label), 
                   size = 3.5, vjust = 1, lineheight = 0.7) +
         # add black and non-black label
-        geom_text(aes(x_position, 0.2, label = race), size = 2.5, lineheight = 0.7, vjust = 0) +
+        geom_text(aes(x_position, 0.2, label = race, color = red_blue), size = 2.5, 
+                  lineheight = 0.7, vjust = 0) +
         # add number label
-        geom_text(aes(x = x_position, y = killed_per_million + 0.2,
+        geom_text(aes(x = x_position, y = killed_per_million + 0.2, color = red_blue,
                       label = killed_per_million), vjust = 0, hjust = 0.5, size = 2.8) +
         scale_color_identity() +
         
@@ -431,8 +343,6 @@ plot_binned_state_geo_vetical <- function() {
     # save plot
     ggsave(filename = "figures_temp/geo_disparity_vertical.png", width = 6.5, height = 6)
 }
-
-plot_binned_state_geo()
 
 plot_disparity_ratio_geo <- function() {
     # plot number of people per million killed by police in binned blue and red

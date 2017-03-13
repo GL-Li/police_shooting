@@ -2,12 +2,26 @@
 This project is to analyze the [Washington Post database](https://github.com/washingtonpost/data-police-shootings) of civilians shot and killed by on-duty police officers in the United States in year 2015 and 2016. 
 
 ## Summary
-Over 1000 civilians are fatally shot by police officers in the United States each year. Black people are more than twice as likely to to killed as non-black people. Racism is often blamed for this disparity. 
+Over 1000 civilians are fatally shot by police officers each year in the United States. Black people are more than twice as likely to to killed as non-black people. Racism is often blamed for this disparity. 
 
-If racism does play a role, we would expect smaller disparity in blue states than in red states, as black people are believed to face less discrimination in blue states. To examine this theory, we divide the 50 states and DC into two groups, blue states and red states, and calcualte the disparity in the two groups using the Washington Post database. 
+If racism does play a role, we would expect smaller disparity in blue states than in red states, as black people are believed to face less discrimination in blue states. 
 
-Surprisingly, the calculation shows that the disparity is much larger in blue states than red states. In red states, black people are <span style="color:red">**1.68**</span> times as likely to be killed by police as non-black people. This disparity ratio doubles to <span style="color:blue">**3.26**</span> in blue states. In large urban area with more than 50000 population, which accounts for 92% of black people killed, the disparity ratio is <span style="color:red">**1.94**</span> in red states and <span style="color:blue">**3.07**</span> in blue states.
+Surprisingly, the analysis of the Washington Post shooting data shows that the disparity is twice as large in blue states as in red states. If we use the disparity as a measure of racism, blue states are more discriminative against black people than red states. 
 
-If we use the disparity as a measure of racism, blue states are more discriminative against black people than red states. This is against intuition and public perception. Why? This is a job for sociologist. 
+
+## Disparity in red states and blue states as two groups
+
+We divide the 50 states and DC into two groups, blue states and red states, using the 2012 presidential election data. Obama is a black people; therefore this data better represents racial issue than the most 2016 election. A state is defined as a blue state if 50% or more voted for Obama, as a red state otherwise. 
+
+The disparity and number of fatal police shooting per million population in the two groups are calcualted using the Washington Post database. 
+
+The disparity is much higher in blue state than in red state. In red states, black people are <span style="color:red">**1.68**</span> times as likely to be killed by police as non-black people. This disparity ratio doubles to <span style="color:blue">**3.26**</span> in blue states. The larger disparity in blue states is partly due to black people is more likely to be killed (13.59 per million black popultion in blue state to 11.32 in red state), but mainly accounted for by less likely non-black people being fatally shot per million population by police. In red states, 6.73 out of mone million non-black people are killed. This number is only 4.17 in blue states. 
+
+In large urban area with more than 50000 population, which accounts for 92% of black people killed, the disparity ratio is <span style="color:red">**1.94**</span> in red states and <span style="color:blue">**3.07**</span> in blue states.
 
 <img src="figures/geo_disparity_vertical.png" alt="disparity ratio" style="width: 600px;"/>
+
+## Disparity in individual states
+
+
+## Data preparation
