@@ -19,14 +19,14 @@ source("~/Dropbox/dataset_analysis/us_2010_census/A0_functions_extract_census_da
 # define the function to make plot
 plot_ratio_vote <- function(choose_geo = "all_geo", 
                             save_as = paste0(choose_geo, "_ratio.png"),
-                            title = "default",
-                            ylabel = "default",
-                            size_breaks = "default",
-                            fill_breaks = "default",
-                            annotation = "default") {
+                            title = NULL,
+                            ylabel = NULL,
+                            size_breaks = NULL,
+                            fill_breaks = NULL,
+                            annotation = NULL) {
     # This function plot the relationship between disparity ratio and vote for
-    # Obama in 2012 election for states that have more than 3 blacks killed or
-    # more than 300,000 black population state-wide
+    # Obama in 2012 election for each state. States with more than 3 blacks killed or
+    # more than 300,000 black population state-wide are highlighted.
     
     # args_____________
     # choose_geo: geocomponent in 2010 census, "all_geo" for all areas, "urban"
@@ -74,13 +74,17 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         setnames(., "perc_vote", "vote_percent")
     
     ###
-    ### join all data for plot and then keep only selected states
+    ### join all data for plot and then highlight selected states with color = "black"
+    ### others with color = "grey"
     ###
     data_plot <- black_killed[total_killed, on=.(state)] %>%
         .[, black_killed_percent := round(black_killed / total_killed, 3) * 100] %>%
         black_population[., on = "state"] %>%
         vote_obama[., on = "state"] %>%
-        .[state %in% selected_states]
+        .[vote_percent >= 50, color := "blue"] %>%
+        .[vote_percent < 50, color := "red"] %>%
+        .[state %in% selected_states, alpha := 1] %>%
+        .[!state %in% selected_states, alpha := 0.2]
     
     ###
     ### add disparity ratio for plot
@@ -105,36 +109,36 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
                        UA = "large urban area",     # urbanized area
                        UC = "small urban area",     # urban cluster
                        rural = "rural area")
-    if (title == "default") {
+    if (is.null(title)) {
         title <- paste0("Relationship between the disparity ratio in ", geo_name, 
                         " and vote for Obama in 2012 election")
     }
-    if (ylabel == "default") {
+    if (is.null(ylabel)) {
         ylabel <- paste0("Disparity ratio in ", geo_name)
     }
 
     # prepare breaks for scale_size and scale fill, from min to max in real plot
-    if (all(size_breaks == "default")) {
+    if (is.null(size_breaks)) {
         # using ceiling and floor to make sure breaks are in real data range. not shown otherwise
         mini = ceiling(min(data_plot[["black_population"]]) / 1e5) / 10
         maxi = floor(max(data_plot[["black_population"]]) / 1e5) / 10
         dif = maxi - mini
         size_breaks <- c(mini, round(mini+0.3*dif, 1), round(mini+0.6*dif, 1), maxi)
     }
-    if (all(fill_breaks == "default")) {
+    if (is.null(fill_breaks)) {
         mini = min(data_plot[["black_killed"]])
         maxi = max(data_plot[["black_killed"]])
         dif = maxi - mini
         fill_breaks <- c(mini, round(mini+0.3*dif), round(mini+0.6*dif), maxi)
     }
-    if (annotation == "default") {
+    if (is.null(annotation)) {
         annotation <- paste("Only showing data of states with more than 3 black", 
                             "people killed or\nwith more than 300,000 black population.", 
                             "Ratios greater than 10 are \nset to 10 for plotting.")
     }
     
     # only plot the selected state
-    ggplot(data_plot, aes(vote_percent, ratio)) +
+    ggplot(data_plot, aes(vote_percent, ratio, color = color, alpha = alpha)) +
         geom_point(aes(size = black_population/1e6, fill = black_killed), pch = 21) +
         # scale legends
         scale_size_area(breaks = size_breaks,
@@ -145,22 +149,26 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
                             guide = guide_legend(order = 2,   # second legend
                                                  title = "number of\nblacks killed", 
                                                  override.aes = list(size=4))) +
+        scale_color_identity() +
+        scale_alpha_identity() +
+        guides(color = FALSE, alpha = FALSE) +
         geom_text_repel(aes(label = state), size = 4) +
-        geom_smooth(method = "lm", se = FALSE, color = "black", linetype = 2, size = 0.2) +
+        geom_smooth(aes(weight = black_population), method = "lm", se = FALSE, color = "black", linetype = 2, size = 0.2) +
         xlab("Percentage of vote for Obama in 2012 (%)") +
         ylab(ylabel) +
         ggtitle(title) +
+        theme_bw() +
         theme(plot.title = element_text(hjust = 0.5),
               legend.position = c(0.91, 0.4),
-              panel.background = element_rect(fill = "#C1F7C1")) +
+              panel.background = element_rect(fill = "white")) +
         # national disparity ratio is 2.48 if calculated with black alone population,
         # 2.27 if calculated including black in combination with other races. take 
         # the mean for national disparity ratio
         geom_hline(yintercept = 2.37, linetype = 2, size = 0.2) +
         annotate("text", x = 70, y = 2.2, label = "national disparity ratio") +
         scale_y_continuous(breaks = seq(0, 11, 2)) +
-        annotate("text", x = 33, y = 9.5, hjust = 0, alpha = 0.5,
-                 label = annotation)
+        # annotate("text", x = 33, y = 9.5, hjust = 0, alpha = 0.5,
+        #          label = annotation)
     ggsave(filename = paste0("figures_temp/", save_as), width = 9, height = 5.5)
 }
 
@@ -267,7 +275,7 @@ plot_grouped_state_disparity <- function() {
                                       "Large Urban Area\npopulation > 50000",
                                       "Small Urban Area\npopulation < 50000",
                                       "Rural Area"),
-                            color = c("black", "purple", "orange", "cyan"))
+                            color = c("grey30", "grey30", "black", "black"))
     
     # disparity data table
     data_disparity_plot <- rbindlist(list(all_geo, UA, UC, rural)) %>%
@@ -282,13 +290,13 @@ plot_grouped_state_disparity <- function() {
         geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.9) +
         scale_fill_manual(values = c("black" = "gray70", "non-black" = "white")) +
         xlim(0, 36.5) +
-        ylim(-1.5, 43) +
+        ylim(-1.5, 45.2) +
         
         # add state label
-        geom_text(data = state_label, aes(x_position, y = -0.5, label = label, color = color),
-                  size = 3, lineheight = 0.7, vjust = 1) +
+        # geom_text(data = state_label, aes(x_position, y = -0.5, label = label, color = color),
+        #           size = 3, lineheight = 0.7, vjust = 1) +
         # add geo label
-        geom_text(data = geo_label, aes(x_position, y = 40, label = label), 
+        geom_text(data = geo_label, aes(x_position, y = 40, label = label, color = color), 
                   size = 3.5, vjust = 1, lineheight = 0.7) +
         # add black and non-black label
         geom_text(aes(x_position, 0.2, label = race, color = red_blue), size = 2.5, 
@@ -305,11 +313,11 @@ plot_grouped_state_disparity <- function() {
         
 
         # add a fake title
-        annotate("text", x = 0, y = 23, size = 3.5, hjust = 0, parse = TRUE,
+        annotate("text", x = 0, y = 23, size = 3.5, hjust = 0, parse = TRUE, color = "grey30",
                  label = 'bold("Number of fatal police shooting per million population of black and non-black people")') +
         
         # add disparity ratio, magnify and move y axis for better contrast
-        geom_line(data = data_disparity_plot, size = 1, 
+        geom_line(data = data_disparity_plot, size = 1, color = "grey30",
                   aes(x = x_position, y = 2 * disparity_ratio + 26, group = geo_component)) +
         geom_point(data = data_disparity_plot, size = 3,
                    aes(x = x_position, y = 2 * disparity_ratio + 26, color = red_blue)) +
@@ -319,13 +327,17 @@ plot_grouped_state_disparity <- function() {
         annotate("segment", x = 18.6, xend = 18.6, y = 25, yend = 36, linetype = 2, size = 0.2) +
         annotate("segment", x = 27.6, xend = 27.6, y = 25, yend = 36, linetype = 2, size = 0.2) +
         
-        annotate("text", x = 0, y = 43, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE,
-                 label = 'bold("How many times black people are as likely to be fatally shot by police as non-black people\nin       and         states")') +
-        # sad geom_text not good at text color, have to this way
-        annotate("text", x = 1.6, y = 42.7, color = "red", parse = TRUE, size = 3.5,
-                 label = 'bold("red")', vjust = 0) +
-        annotate("text", x = 5.2, y = 42.7, color = "blue", parse = TRUE, size = 3.5,
-                 label = 'bold("blue")', vjust = 0) + 
+        # add title
+        annotate("text", x = 0, y = 45, hjust = 0, size = 4.5, parse = TRUE,
+                 label = 'bold("Fatal Police Shooting in       and         states")') +
+        # sad that geom_text not good at text color, have to di it this way
+        annotate("text", x = 12.75, y = 45.15, hjust = 0, color = "red", size = 4.5, parse = TRUE,
+                 label = 'bold("red")') +
+        annotate("text", x = 17, y = 45.15, hjust = 0, color = "blue", size = 4.5, parse = TRUE,
+                 label = 'bold("blue")') + 
+        
+        annotate("text", x = 0, y = 42, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE, color = "grey30",
+                 label = 'bold("How many times black people are as likely to be fatally shot by police as non-black people")') +
         
         # shade small urban area and rural area
         annotate("rect", xmin = 18.5, xmax = 36.5, ymin = 25, ymax = 41, fill = "white", alpha = 0.7) +
