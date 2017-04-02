@@ -28,7 +28,7 @@ After treating red and blues states in two groups, let's look the disparity in i
 
 (check all numbers after database update) The following figure clearly shows larger disparity in blue states. The bluer a state is, the larger the disparity. While Obama got 90% vote in DC, all 8 killed by police are blacks. (all disparity ratios are capped at 10 to be plot in the figure) Among the traditional blue states, Illinois tops the list where the blacks are 7.6 times as likely as non-blacks to be killed. Massachusetts is 5.2 times, and New York 5.3 time. California is the best but still 3.0 times, higher than the national average, which is 2.2 times (use large urban average). On the other hand, all those below the national average are red states, including Texas, Alabama, Mississippi, and Tennessee. In particular, the blacks are only 61% as likely as non-blacks to be killed by police in Mississippi.
 
-<img src="figures/disparity_state_all_area.png" alt="disparity ratio all area" style="width: 800px;"/>
+<img src="figures/disparity_vote_UA.png" alt="disparity ratio all area" style="width: 800px;"/>
 
 
 ## Data preparation

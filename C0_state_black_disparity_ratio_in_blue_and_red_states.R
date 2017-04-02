@@ -39,6 +39,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     # size_breaks: breaks for scale_size_area(), default provided below
     # fill_breaks: breaks for scale_fill_gradient(), default provided below
     # annotation: label for annotate(), default provided below
+    
     # return______________
     # a save png figure
 
@@ -54,17 +55,17 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     ###
     ### prepare data
     ###
-    # number black people killed in the choose_geo
+    # number of black people killed in the choose_geo
     black_killed <- shooting_count_urban_rural("B") %>%
         .[, black_killed := .[[choose_geo]]] %>%    # use variable as column name
-        .[, .(state, black_killed)]
+        .[, .(state, black_killed)]                 # and [[]] to return a vector
     
     # number of all known races killed in the choose_geo
     total_killed <- shooting_count_urban_rural("all") %>%
         .[, total_killed := .[[choose_geo]]] %>%
         .[, .(state, total_killed)]
     
-    # black population in each state in 2010 census
+    # black population in choose_geo of each state in 2010 census
     black_population <- get_total_geo_population(choose_geo) %>%
         .[, population_percent := round(100 * black / total, 2)] %>%
         .[, .(state, black_population = black, population_percent)]
@@ -74,9 +75,9 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         setnames(., "perc_vote", "vote_percent")
     
     ###
-    ### join all data for plot and then highlight selected states with color = "black"
-    ### others with color = "grey"
-    ###
+    ### Join all data for plot. Highlight selected states in new column 
+    ### with alpha = 1 and others with alpha = 0.2. Color blue and red state in
+    ### new column color
     data_plot <- black_killed[total_killed, on=.(state)] %>%
         .[, black_killed_percent := round(black_killed / total_killed, 3) * 100] %>%
         black_population[., on = "state"] %>%
@@ -96,7 +97,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     data_plot[,  ratio := round(black_killed_percent * (100 - population_percent) / 
                                     (population_percent * (100 - black_killed_percent)), 3)]
     # if all killed are blacks. the ratio is infinity. we use 10 to represent it.
-    # also if any ration greater than 10, capped at 10 for better plotting
+    # also if any ratio greater than 10, capped at 10 for better plotting
     data_plot[ratio > 10, ratio := 10]
     
     ###
@@ -110,7 +111,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
                        UC = "small urban area",     # urban cluster
                        rural = "rural area")
     if (is.null(title)) {
-        title <- paste0("Relationship between the disparity ratio in ", geo_name, 
+        title <- paste0("Relationship between disparity ratio in ", geo_name, 
                         " and vote for Obama in 2012 election")
     }
     if (is.null(ylabel)) {
@@ -119,7 +120,8 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
 
     # prepare breaks for scale_size and scale fill, from min to max in real plot
     if (is.null(size_breaks)) {
-        # using ceiling and floor to make sure breaks are in real data range. not shown otherwise
+        # using ceiling and floor to make sure breaks are in real data range.
+        # otherwise it will not shown in legend label
         mini = ceiling(min(data_plot[["black_population"]]) / 1e5) / 10
         maxi = floor(max(data_plot[["black_population"]]) / 1e5) / 10
         dif = maxi - mini
@@ -132,43 +134,66 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         fill_breaks <- c(mini, round(mini+0.3*dif), round(mini+0.6*dif), maxi)
     }
     if (is.null(annotation)) {
-        annotation <- paste("Only showing data of states with more than 3 black", 
-                            "people killed or\nwith more than 300,000 black population.", 
-                            "Ratios greater than 10 are \nset to 10 for plotting.")
+        annotation <- paste0("Highligted are significant        and          states with\n", 
+                            "more than 3 black people killed or with more than\n", 
+                            "300,000 black population. Ratios greater\n",
+                            "than 10 are set to 10.")
     }
     
     # only plot the selected state
     ggplot(data_plot, aes(vote_percent, ratio, color = color, alpha = alpha)) +
         geom_point(aes(size = black_population/1e6, fill = black_killed), pch = 21) +
-        # scale legends
-        scale_size_area(breaks = size_breaks,
-                        guide = guide_legend(order = 1,   # first legend
-                                             title = "black\npopulation\n(million)",
-                                             override.aes = list(shape = 1))) +
-        scale_fill_gradient(low = "white", high = "black", breaks = fill_breaks,
-                            guide = guide_legend(order = 2,   # second legend
-                                                 title = "number of\nblacks killed", 
-                                                 override.aes = list(size=4))) +
-        scale_color_identity() +
-        scale_alpha_identity() +
-        guides(color = FALSE, alpha = FALSE) +
         geom_text_repel(aes(label = state), size = 4) +
         geom_smooth(aes(weight = black_population), method = "lm", se = FALSE, color = "black", linetype = 2, size = 0.2) +
-        xlab("Percentage of vote for Obama in 2012 (%)") +
-        ylab(ylabel) +
+        
+        # title, axis and legends === 
         ggtitle(title) +
+        scale_x_continuous("Vote for Obama in 2012 presidential election",
+                           breaks = c(30, 50, 70, 90), 
+                           labels = paste0(c(30, 50, 70, 90), "%")) +
+        scale_y_continuous(ylabel, breaks = seq(0, 11, 2)) +
+        scale_size_area("black\npopulation\n(million)",
+                        breaks = size_breaks,
+                        guide = guide_legend(order = 1,   # first legend
+                                             override.aes = list(shape = 1))) +
+        scale_fill_gradient("number of\nblacks killed", 
+                            low = "white", high = "black", 
+                            breaks = fill_breaks,
+                            guide = guide_legend(order = 2,   # second legend
+                                                 override.aes = list(size=4))) +
+        scale_color_identity() +    # default guide = "none" for scale_xxx_identity()
+        scale_alpha_identity() +
+        
+        # themes === 
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5),
+              axis.title = element_text(color = "grey50"),
+              axis.text = element_text(color = "grey50"),
+              axis.ticks = element_line(color = "grey50"),
               legend.position = c(0.91, 0.4),
-              panel.background = element_rect(fill = "white")) +
+              legend.title = element_text(color = "grey50"),
+              legend.text = element_text(color = "grey50"),
+              panel.background = element_rect(fill = "white"),
+              panel.border = element_rect(color = "grey50"),
+              panel.grid.major = element_line(color = "grey98"),
+              panel.grid.minor = element_line(color = "grey98")) +
+        
+        # annotations ===
         # national disparity ratio is 2.48 if calculated with black alone population,
         # 2.27 if calculated including black in combination with other races. take 
-        # the mean for national disparity ratio
-        geom_hline(yintercept = 2.37, linetype = 2, size = 0.2) +
-        annotate("text", x = 70, y = 2.2, label = "national disparity ratio") +
-        scale_y_continuous(breaks = seq(0, 11, 2)) +
-        # annotate("text", x = 33, y = 9.5, hjust = 0, alpha = 0.5,
-        #          label = annotation)
+        # the mean, 2.37, for national disparity ratio
+        geom_hline(yintercept = 2.37, linetype = 2, size = 0.2, color = "grey50") +
+        annotate("text", x = 70, y = 2.2, label = "national disparity ratio", color = "grey50") +
+        
+        # so sad, cannot control text color in annotation, have to do this way
+        annotate("text", x = 24, y = 10, hjust = 0, vjust = 1, color = "grey50",
+                 label = annotation) +
+        annotate("text", x = 39.1, y = 10, hjust = 0, vjust = 1, alpha = 1,
+                 label = "red", color = "red") +
+        annotate("text", x = 44.7, y = 10, hjust = 0, vjust = 1, alpha = 1,
+                 label = "blue", color = "blue")
+    
+    # save plot 
     ggsave(filename = paste0("figures_temp/", save_as), width = 9, height = 5.5)
 }
 
