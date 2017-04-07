@@ -164,20 +164,6 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         scale_color_identity() +    # default guide = "none" for scale_xxx_identity()
         scale_alpha_identity() +
         
-        # themes === 
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5),
-              axis.title = element_text(color = "grey50"),
-              axis.text = element_text(color = "grey50"),
-              axis.ticks = element_line(color = "grey50"),
-              legend.position = c(0.91, 0.4),
-              legend.title = element_text(color = "grey50"),
-              legend.text = element_text(color = "grey50"),
-              panel.background = element_rect(fill = "white"),
-              panel.border = element_rect(color = "grey50"),
-              panel.grid.major = element_line(color = "grey98"),
-              panel.grid.minor = element_line(color = "grey98")) +
-        
         # annotations ===
         # national disparity ratio is 2.48 if calculated with black alone population,
         # 2.27 if calculated including black in combination with other races. take 
@@ -191,8 +177,22 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         annotate("text", x = 39.1, y = 10, hjust = 0, vjust = 1, alpha = 1,
                  label = "red", color = "red") +
         annotate("text", x = 44.7, y = 10, hjust = 0, vjust = 1, alpha = 1,
-                 label = "blue", color = "blue")
-    
+                 label = "blue", color = "blue") +
+        
+        # themes === 
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5),
+              axis.title = element_text(color = "grey50"),
+              axis.text = element_text(color = "grey50"),
+              axis.ticks = element_line(color = "grey50"),
+              legend.position = c(0.91, 0.4),
+              legend.title = element_text(color = "grey50"),
+              legend.text = element_text(color = "grey50"),
+              panel.background = element_rect(fill = "white"),
+              panel.border = element_rect(color = "grey50"),
+              panel.grid.major = element_line(color = "grey98"),
+              panel.grid.minor = element_line(color = "grey98")) +
+
     # save plot 
     ggsave(filename = paste0("figures_temp/", save_as), width = 9, height = 5.5)
 }
@@ -263,8 +263,10 @@ get_binned_state_geo <- function(choose_geo = "all_geo") {
 
 
 plot_grouped_state_disparity <- function() {
-    # plot disparity ration and number of people per million killed by police in grouped blue and red
-    # states
+    # This function plot disparity ration and number of people per million killed by police in 
+    # grouped blue and red states
+    
+    # prepare data ===
     all_geo <- get_binned_state_geo("all_geo")
     UA <- get_binned_state_geo("UA")
     UC <- get_binned_state_geo("UC")
@@ -311,6 +313,7 @@ plot_grouped_state_disparity <- function() {
         .[, x_position := c(2, 6.2, 12, 16.2, 21, 25.2, 30, 34.2)] %>%
         .[, color := c("black", "black", "purple", "purple", "orange", "orange", "cyan", "cyan")]
     
+    # make plot ===
     ggplot(data_plot, aes(x_position, killed_per_million)) +
         geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.9) +
         scale_fill_manual(values = c("black" = "gray70", "non-black" = "white")) +
@@ -341,7 +344,8 @@ plot_grouped_state_disparity <- function() {
         annotate("text", x = 0, y = 23, size = 3.5, hjust = 0, parse = TRUE, color = "grey30",
                  label = 'bold("Number of fatal police shooting per million population of black and non-black people")') +
         
-        # add disparity ratio, magnify and move y axis for better contrast
+        # add disparity ratio ===
+        # magnify and move y axis for better contrast
         geom_line(data = data_disparity_plot, size = 1, color = "grey30",
                   aes(x = x_position, y = 2 * disparity_ratio + 26, group = geo_component)) +
         geom_point(data = data_disparity_plot, size = 3,

@@ -8,8 +8,8 @@ If racism does play a role, we would expect smaller disparity in blue states tha
 
 Surprisingly, the analysis of the Washington Post shooting data shows that the disparity is twice as large in blue states as in red states. If we use the disparity as a measure of racism, blue states are more discriminative against black people than red states. 
 
-
-## Disparity in red states and blue states as two groups
+## Results
+### Disparity in red states and blue states as two groups
 
 We divide the 50 states and DC into two groups, blue states and red states, using the 2012 presidential election data. As Obama is a black people, this data better represents racial issues than the most recent 2016 election data. A state is a blue state if 50% or more voted for Obama, a red state otherwise. We use 50% vote as the criteria instead of Obama winning because all other candidates are non-blacks. 
 
@@ -23,12 +23,16 @@ In large urban area with more than 50000 population, which accounts for 92% of b
 
 <img src="figures/geo_disparity_vertical.png" alt="disparity ratio" style="width: 600px;"/>
 
-## Disparity in individual states (large urban area only, move all state to appendix)
-After treating red and blues states in two groups, let's look the disparity in individual states. We will pay attention to significant states with more than 300,000 black population, or with more than 3 black people killed by police. 
+### Disparity in individual states
+After treating red and blues states in two groups, let's examine the disparity in each individual states. We will pay attention to large urban area of significant states with more than 300,000 black population, or with more than 3 black people killed by police. 
 
-(check all numbers after database update) The following figure clearly shows larger disparity in blue states. The bluer a state is, the larger the disparity. While Obama got 90% vote in DC, all 8 killed by police are blacks. (all disparity ratios are capped at 10 to be plot in the figure) Among the traditional blue states, Illinois tops the list where the blacks are 7.6 times as likely as non-blacks to be killed. Massachusetts is 5.2 times, and New York 5.3 time. California is the best but still 3.0 times, higher than the national average, which is 2.2 times (use large urban average). On the other hand, all those below the national average are red states, including Texas, Alabama, Mississippi, and Tennessee. In particular, the blacks are only 61% as likely as non-blacks to be killed by police in Mississippi.
+There is a clear uptrend of disparity when plotted against vote for Obama in 2012 presidential election.  The traditional blue states such as Illinois, Massachusetts, and New York double the disparity of national average. The Washington D.C. makes an extreme case - all 8 people killed by police in 2015 and 2016 are black people, while only half the population are blacks. California is better but still higher than the national average. On the other hand, most states below the national average are red states, including Texas, Gorgia, Alabama, and Tennessee.
 
 <img src="figures/disparity_vote_UA.png" alt="disparity ratio all area" style="width: 800px;"/>
 
 
 ## Data preparation
+### Fatal police shooting in larger urban, small urban, and rural area
+The location of the shootings provided in the Washington Post dataset is down to city/town level. We do not know weather it is a larger urban area, small urban area, or rural area. In order to identify the nature of the location, we plot the shooting on top of population map. The map, which is produced using 2010 national census data, shows the region of large urban, small urban, and rural areas. Eyeballing the map, we can count easily the number of shooting in small urban areas and rural areas. The remaining shooting cases are in large urban areas.
+
+<img src="figures/block_level_all_killed_GA_map.png" alt="Georgia map example" style="width: 800px;"/>

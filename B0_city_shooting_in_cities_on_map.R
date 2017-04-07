@@ -8,9 +8,9 @@ library(ggrepel)
 library(data.table)
 library(ggmap)
 
-source("~/Dropbox/dataset_analysis/kaggle_police_shooting_WSJ/A0_functions_prepare_shooting_data.R")
+source("A0_functions_prepare_shooting_data.R")
 source("~/Dropbox/dataset_analysis/us_2010_census/A0_functions_extract_census_data.R")
-setwd("~/Dropbox/dataset_analysis/kaggle_police_shooting_WSJ")
+# setwd("~/Dropbox/dataset_analysis/kaggle_police_shooting_WSJ")
 
 # count people killed in a state urban or rural map ===========================
 # display a map of the state with urbanized area in pink, urban clusters in orange,
@@ -21,8 +21,10 @@ geo <- get_full_geo("GA")
 plot_urban_rural_on_map("Macon, GA, US", geo, 7) +
     geom_point(data = city_count, aes(lon, lat, size = count * 100000), 
                alpha = 1, color = "red", shape = 1) + 
-    theme(legend.text = element_text(size = 15))
-ggsave(filename = "figures/block_level_all_killed_GA_map.png", width = 8, height = 8)
+    theme(legend.text = element_text(size = 11)) +
+    labs(title = "Fatal police shooting in Georgia",
+         subtitle = "Location and number of shootings are marked by open red circles")
+ggsave(filename = "figures_temp/block_level_all_killed_GA_map.png", width = 8, height = 8)
 
 
 # plot shooting on national map ===============================================
