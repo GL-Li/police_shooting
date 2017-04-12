@@ -462,4 +462,4 @@ plot_disparity_ratio_geo <- function() {
               panel.background = element_blank())               
     ggsave(filename = "figures_temp/disparity_ratio_geo.png", width = 5, height = 3)
 }
-plot_disparity_ratio_geo()
+# plot_disparity_ratio_geo()

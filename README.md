@@ -32,7 +32,21 @@ There is a clear uptrend of disparity when plotted against vote for Obama in 201
 
 
 ## Data preparation
-### Fatal police shooting in larger urban, small urban, and rural area
+### Fatal police shooting in larger urban area, small urban area, and rural area
 The location of the shootings provided in the Washington Post dataset is down to city/town level. We do not know weather it is a larger urban area, small urban area, or rural area. In order to identify the nature of the location, we plot the shooting on top of population map. The map, which is produced using 2010 national census data, shows the region of large urban, small urban, and rural areas. Eyeballing the map, we can count easily the number of shooting in small urban areas and rural areas. The remaining shooting cases are in large urban areas.
 
 <img src="figures/block_level_all_killed_GA_map.png" alt="Georgia map example" style="width: 800px;"/>
+
+The count of fatal shooting in small urban area and rural area may not be accurate. As the location is only down to the city or town level, some shooting that took place in rural area will be marked as urban area, unless the city/town itself belongs to rural area. We need more detailed location information to get reliable count. This miscount, however, does not significantly affect the count in large urban area.
+
+|           | large urban area | small urban area | rural area |
+|-----------|:----------------:|:----------------:|:----------:|
+|blue states| 281 / 596        | 14 / 69          | 1 / 65     |
+|red states | 171 / 296        | 20 / 131         | 3 / 112    |
+
+Table: Number of black / non-black people fatally shot by police in blue states and red states
+
+### Vote for Obama in 2012 presidential election
+
+
+### Population in 2010 national census
