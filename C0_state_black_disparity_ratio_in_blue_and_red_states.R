@@ -198,7 +198,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
 }
 
 
-# disparity ratio of states binned as red, neutral and blue states ============
+# disparity ratio of states binned as red and blue states ============
 get_binned_state_geo <- function(choose_geo = "all_geo") {
     # This function returns population and people killed by police in
     # binned red state (50% or less vote for obama in 2012 election) and blue 
@@ -262,8 +262,8 @@ get_binned_state_geo <- function(choose_geo = "all_geo") {
 }
 
 
-plot_grouped_state_disparity <- function() {
-    # This function plot disparity ration and number of people per million killed by police in 
+plot_grouped_state_1 <- function() {
+    # This function plot disparity ratio and number of people per million killed by police in 
     # grouped blue and red states
     
     # prepare data ===
@@ -463,3 +463,131 @@ plot_disparity_ratio_geo <- function() {
     ggsave(filename = "figures_temp/disparity_ratio_geo.png", width = 5, height = 3)
 }
 # plot_disparity_ratio_geo()
+
+
+# revised disparity ratio in blue states and red states as groups =============
+plot_grouped_state_2 <- function() {
+    # This function plot disparity ration and number of people per million killed by police in 
+    # grouped blue and red states at state level
+    
+    # prepare data ===
+    all_geo <- get_binned_state_geo("all_geo")
+    UA <- get_binned_state_geo("UA")
+    UC <- get_binned_state_geo("UC")
+    rural <- get_binned_state_geo("rural")
+    
+    # combined rural and UC
+    rural_UC <- as.data.table(as.matrix(UC[, 2:5]) + as.matrix(rural[, 2:5])) %>%
+        .[, blue_red := c("blue", "red")] %>%
+        setcolorder(c("blue_red", setdiff(names(.), "blue_red"))) %>%
+        .[, black_population_percent := round(100 * sum_black_population / sum_total_population, 2)] %>%
+        .[, black_killed_percent := round(100 * sum_black_killed / sum_total_killed, 2)] %>%
+        .[, black_killed_per_million := round(sum_black_killed / sum_black_population * 1e6, 2)] %>%
+        .[, non_black_killed_per_million := round((sum_total_killed -sum_black_killed) / 
+                                                      (sum_total_population -sum_black_population) * 1e6, 2)] %>%
+        .[, disparity_ratio := round(black_killed_per_million / non_black_killed_per_million, 2)] %>%
+        .[, geo_component := "rural and urban cluster"]
+    
+    data_plot <- rbindlist(list(all_geo, UA, rural_UC)) %>%
+        # keep only needed columns
+        .[, .(red_blue, black_killed_per_million, non_black_killed_per_million, geo_component)] %>%
+        # convert to long table for plot
+        melt(measure.vars = c("black_killed_per_million", "non_black_killed_per_million"),
+             variable.name = "race",
+             value.name = "killed_per_million") %>%
+        # change values in column "race"
+        .[, race := ifelse(race == "black_killed_per_million", "black", "non-\nblack")] %>%
+        # reorder levels of geo_component
+        .[, geo_component := factor(geo_component, levels = c("all area", "urbanized area",
+                                                              "rural and urban cluster"))] %>%
+        # reorder rows 
+        setorder(geo_component, red_blue, race) %>%
+        # add new column for position
+        .[, x_position := c(1, 3, 5.2, 7.2,       # all area
+                            11, 13, 15.2, 17.2,   # UA
+                            20, 22, 24.2, 26.2)]  # rural and UC
+
+    # label data tables
+    state_label <- data.table(x_position = c(2, 6.2, 12, 16.2, 21, 25.2),
+                              label = c("red states", "blue states"),
+                              color = c("red", "blue"))
+    geo_label <- data.table(x_position = c(4.1, 14.1, 23.1),
+                            label = c("All Area", 
+                                      "Large Urban Area\npopulation > 50000",
+                                      "Rural and Small Urban Area"),
+                            color = c("grey30", "grey30", "grey30"))
+    
+    # disparity data table
+    data_disparity_plot <- rbindlist(list(all_geo, UA, rural_UC)) %>%
+        .[, .(red_blue, disparity_ratio, geo_component)] %>%
+        .[, geo_component := factor(geo_component, levels = c("all area", "urbanized area",
+                                                              "rural and urban cluster"))] %>%
+        setorder(geo_component, red_blue) %>%
+        .[, x_position := c(2, 6.2, 12, 16.2, 21, 25.2)] %>%
+        .[, color := c("black", "black", "purple", "purple", "orange", "orange")]
+    
+    # make plot ===
+    ggplot(data_plot, aes(x_position, killed_per_million)) +
+        geom_bar(stat = "identity", aes(color = red_blue, fill = race), size = 0.5, width = 1.9) +
+        scale_fill_manual(values = c("black" = "gray70", "non-black" = "white")) +
+        xlim(0, 27.5) +
+        ylim(-1.5, 43.2) +
+        
+        # add state label
+        # geom_text(data = state_label, aes(x_position, y = -0.5, label = label, color = color),
+        #           size = 3, lineheight = 0.7, vjust = 1) +
+        # add geo label
+        geom_text(data = geo_label, aes(x_position, y = 37, label = label, color = color), 
+                  size = 3.5, vjust = 1, lineheight = 0.7) +
+        # add black and non-black label
+        geom_text(aes(x_position, 0.2, label = race, color = red_blue), size = 2.5, 
+                  lineheight = 0.7, vjust = 0) +
+        # add number label
+        geom_text(aes(x = x_position, y = killed_per_million + 0.2, color = red_blue,
+                      label = killed_per_million), vjust = 0, hjust = 0.5, size = 2.8) +
+        scale_color_identity() +
+        
+        # add a vertical line to split all area and other areas
+        annotate("segment", x = 9.1, xend = 9.1, y = 0, yend = 16, linetype = 2, size = 0.2) +
+        annotate("segment", x = 18.6, xend = 18.6, y = 0, yend = 16, linetype = 2, size = 0.2) +
+
+        # add a fake title
+        annotate("text", x = 0, y = 18, size = 3.5, hjust = 0, parse = TRUE, color = "grey30",
+                 label = 'bold("Number of fatal police shooting per million population of black and non-black people")') +
+        
+        # add disparity ratio ===
+        # magnify and move y axis for better contrast
+        geom_line(data = data_disparity_plot, size = 1, color = "grey30",
+                  aes(x = x_position, y = 2 * disparity_ratio + 23, group = geo_component)) +
+        geom_point(data = data_disparity_plot, size = 3,
+                   aes(x = x_position, y = 2 * disparity_ratio + 23, color = red_blue)) +
+        geom_text(data = data_disparity_plot, size = 3, hjust = 1,
+                  aes(x = x_position, y = 2 * disparity_ratio + 24, label = disparity_ratio, color = red_blue)) +
+        annotate("segment", x = 9.1, xend = 9.1, y = 22, yend = 33, linetype = 2, size = 0.2) +
+        annotate("segment", x = 18.6, xend = 18.6, y = 22, yend = 33, linetype = 2, size = 0.2) +
+
+        # add title
+        annotate("text", x = 0, y = 43, hjust = 0, size = 4.5, parse = TRUE,
+                 label = 'bold("Fatal Police Shooting in       and         states")') +
+        # sad that geom_text not good at text color, have to di it this way
+        annotate("text", x = 9.65, y = 43.15, hjust = 0, color = "red", size = 4.5, parse = TRUE,
+                 label = 'bold("red")') +
+        annotate("text", x = 12.9, y = 43.15, hjust = 0, color = "blue", size = 4.5, parse = TRUE,
+                 label = 'bold("blue")') + 
+        
+        annotate("text", x = 0, y = 39, hjust = 0, lineheight = 0.9, size = 3.5, parse = TRUE, color = "grey30",
+                 label = 'bold("How many times black people are as likely to be killed by police as non-black people")') +
+        
+        theme(plot.title = element_text(size = 10, face = "bold"),
+              axis.text = element_blank(),
+              axis.ticks = element_blank(),
+              axis.title = element_blank(),
+              legend.position = "none",
+              panel.grid = element_blank(),
+              panel.background = element_blank(),
+              plot.margin = unit(c(2, 0, -5, 0), "mm"))  # negative number set margin
+    
+    # save plot
+    ggsave(filename = "figures_temp/geo_disparity_vertical.png", width = 6.5, height = 5.5)
+}
+
