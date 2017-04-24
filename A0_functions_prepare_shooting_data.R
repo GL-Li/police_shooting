@@ -10,10 +10,12 @@ library(ggmap)
 
 convert_state_names <- function(state_names, from, to) {
     # This function converts state names between lower case and abbriavation
-    #args_______________
+    
+    # args_______________
     # state_names: vector of state names in lower case or abbrevation
     # from: format of names to be converted, take value "abbr" or "low"
     # to: format of converted names, take value "low" or "abbr"
+    
     # return____________
     # a vector of converted state names
     
@@ -33,7 +35,7 @@ convert_state_names <- function(state_names, from, to) {
              "tennessee", "texas", "utah", "vermont", "virginia", "washington", 
              "west virginia", "wisconsin", "wyoming")
     
-    # make a lookup table to convert lowercase state name to abbrivation
+    # make a lookup table to convert between lowercase and abbrivation state names
     convert_to <- get(to)
     names(convert_to) <- get(from)
     

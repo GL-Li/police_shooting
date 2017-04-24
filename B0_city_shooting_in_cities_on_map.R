@@ -9,7 +9,7 @@ library(data.table)
 library(ggmap)
 
 source("A0_functions_prepare_shooting_data.R")
-source("~/Dropbox/dataset_analysis/us_2010_census/A0_functions_extract_census_data.R")
+source("A0_functions_extract_census_data.R")
 # setwd("~/Dropbox/dataset_analysis/kaggle_police_shooting_WSJ")
 
 # count people killed in a state urban or rural map ===========================

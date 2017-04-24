@@ -8,10 +8,10 @@ library(ggmap)
 library(magrittr)
 
 # load functions for police shooting data
-source("~/Dropbox/dataset_analysis/police_shooting/A0_functions_prepare_shooting_data.R")
+source("A0_functions_prepare_shooting_data.R")
 
 # load functions for 2010 census data
-source("~/Dropbox/dataset_analysis/us_2010_census/A0_functions_extract_census_data.R")
+source("A0_functions_extract_census_data.R")
 
 
 # disparity ration of each state ==============================================
