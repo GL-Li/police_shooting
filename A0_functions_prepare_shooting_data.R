@@ -1,5 +1,5 @@
-# This file prepares functions for use in kaggle_police_shooting_WSJ data analysis.
-# Last reviewed 2/9/2017
+# This file defines functions for preparing Washington Post fatal police shooting data.
+# Last reviewed 4/24/2017
 
 
 library(data.table)
@@ -109,7 +109,7 @@ shooting_race_location <- function(){
 }
 
 
-shooting_city_count <- function(choose_race) {
+shooting_city_count <- function(choose_race = "all") {
     # This function returns the number of people of the specified race killed by 
     # police in each city 
     
@@ -117,7 +117,7 @@ shooting_city_count <- function(choose_race) {
     # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
     #              and "all" for all races
     # return__________
-    # a data.table of the number of race killed in each location
+    # a data.table of the number of race killed in each city
     
     # only care race and location here
     shooting <- shooting_race_location()
@@ -138,14 +138,18 @@ shooting_city_count <- function(choose_race) {
 }
 
 
-shooting_state_count <- function(choose_race) {
+shooting_state_count <- function(choose_race = "all") {
     # This function calculate number of cases of police fatal shooting in each 
     # state of selected race
     
     # args_____________
-    # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian
+    # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
+    #    "all" for all races
     
-    # make a single columns data table of state to join by data with missing state
+    # returns_________
+    # a data.table of the number of selected race killed in each state
+    
+    # make a single columns data table of states to join by data with missing state
     state_dt <- data.table(
         state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
                   "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
@@ -180,7 +184,13 @@ shooting_count_urban_rural <- function(all_or_black = "all") {
     # This function returns a data.table of police shooting of all races or of 
     # blacks in urbanized area, urban clusters and rural area of each state
     
-    # total number in killed in each state
+    # args_________
+    # all_or_black: all races or black race, take values "all" or "black"
+    
+    # returns______
+    # a data.table of the count of police shooting
+    
+    # total number killed in each state
     total_killed <- shooting_state_count(all_or_black)
     
     if (all_or_black == "B") {

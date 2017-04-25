@@ -14,12 +14,14 @@ library(ggmap)
 
 # define functions ============================================================
 get_full_geo <- function(state_abbr_vector, zero_to_NA = TRUE) {
-    # This function get the full census data of urban and rural population. 
-    # Keep every row in the data file.
+    # This function get the full census data of urban and rural population of
+    # selected states. Keep every row in the data file.
     
     # args___________
     # state_abbr_vector: vector of state abbriviations such as c("MA", "RI")
-    # zero_to_NA: option to convert numbers zero to NA to reduce the plot point
+    # zero_to_NA: logical
+    #     option to convert numbers zero to NA to reduce the plot point
+    
     # return_________
     # a data.table of population of the states in the vector
     
@@ -37,7 +39,8 @@ get_full_geo <- function(state_abbr_vector, zero_to_NA = TRUE) {
         geo <- fread(geofile, sep = "\n", header = FALSE)
         
         # replace unicodes with "9" in geofile of these state. A unicode such as
-        # "\xf1" is treated as one letter. do not break it apart.
+        # "\xf1" is treated as one letter. They are Spanish letters.
+        # Do not break it apart.
         if (state_abbr %in% c("US", "TX", "NM", "CA", "AZ", "CO")) {
             geo[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
         }
@@ -81,13 +84,15 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE) {
     # args___________
     # state_abbr_vector: vector of state abbriviations such as c("MA", "RI")
     # zero_to_NA: option to convert numbers zero to NA to reduce the plot point
+    
     # return_________
     # a data.table of population in the state vector
     
     population_list <- list()
     for (state_abbr in state_abbr_vector) {
         print(state_abbr)
-        # setup file path
+        # setup file path, change according to the location of downloaded 2010
+        # census data
         folder <- paste0("~/dropbox_datasets/US_2010_census/", state_abbr, "/")
         geofile <- paste0(folder, tolower(state_abbr), "geo2010.ur1")
         f02file <- paste0(folder, tolower(state_abbr), "000022010.ur1")
@@ -136,21 +141,25 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE) {
 plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7) {
     # This function plot urbanized area, urban clusters, and rural area at block
     # level of a state on google map
+    # Require internet connection to download google map
     
     # args_______
-    # state_abbr: abbreviation of a state
+    # state_abbr: abbreviation of a state, such as "MA" and "FL"
     # state_full_geo: the data.table obtained from function get_full_geo(). This
-    #                 function runs a long time. So get it done out of the 
+    #                 function runs a long time. So get it done outside of the 
     #                 plot_urban_rural_on_map function.
     # zoom: zoom when using get_map() to download map data. Adjust accordingly.
     
+    # returns_____
+    # no return but make a plot
     
     block <- state_full_geo %>%
         .[level_code == "100"] %>%     # level code for block is "100" instead of 101
         .[, .(lat, lon, urban_area, urban_cluster, rural)] 
     
-    map <- get_map(location = state_abbr, zoom = zoom)
-    ggmap(map) +         # make sure urban_area on top and rural at bottom
+    map <- get_map(location = state_abbr, zoom = zoom)  # using ggmap package
+    ggmap(map) +         
+        # make sure urban_area is the top layer and rural at bottom
         geom_point(data = block[!is.na(rural)], 
                    aes(lon, lat, size = rural, color = "rural area"),
                    alpha = 0.3) +
@@ -164,15 +173,16 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7) {
                            breaks = c("large urban area",  # order keys in legend
                                       "small urban area",
                                       "rural area"),
-                           values = c("rural area" = "cyan",
+                           values = c("large urban area" = "#DE90F5",
                                       "small urban area" = "orange",
-                                      "large urban area" = "#DE90F5")) +
+                                      "rural area" = "cyan")) +
         theme(legend.position = "top",
               legend.text = element_text(size = 20),
               axis.title = element_blank(),
               axis.text = element_blank(),
               axis.ticks = element_blank()) +
         scale_size_area(max_size = 20) + 
+        # override and fix legend key sizes
         guides(size = FALSE, color = guide_legend(override.aes = list(size=5)))
 }
 
@@ -186,10 +196,12 @@ get_total_geo_population <- function(geo_comp = "all_geo") {
     # takes less than 1 sec to run
     
     # args___________
-    # geo: geocomponent taking values from "not_geo", "urban", "UA" for urbanized
-    #      area, "UC" for urban cluster, and rural
+    # geo_comp: geocomponent taking values from "all_geo", "urban", "UA" for urbanized
+    #      area, "UC" for urban cluster, and "rural"
+    
     # return_________
-    # data.table of total population in above states
+    # data.table of total population in 50 states and DC
+    
     geo_code <- c("00", "01", "04", "28", "43")
     names(geo_code) <- c("all_geo", "urban", "UA", "UC", "rural")
     
