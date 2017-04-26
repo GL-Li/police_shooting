@@ -28,7 +28,7 @@ ggsave(filename = "figures_temp/block_level_all_killed_GA_map.png", width = 8, h
 
 
 # plot shooting on national map ===============================================
-city_count <- shooting_city_count("B")
+city_count <- shooting_city_count("all", unarmed = TRUE)
 
 # census data at census tract level 
 # CT <- fread("../us_2010_census/extracted_csv/full_geo_race_census_tract_level")
@@ -37,6 +37,7 @@ city_count <- shooting_city_count("B")
 # plot on us map
 block <- fread("~/dropbox_datasets/US_2010_census/extracted_csv/full_geo_race_block_level")
 us_map <- get_map(location = "Wichita", zoom = 4)
+state_border <- map_data("state")
 
 # takes a very long time to plot and save, need 6G memory to process
 ggmap(us_map) +
@@ -48,8 +49,9 @@ ggmap(us_map) +
                alpha = 0.7, color = "#DE90F5", stroke = 0) +
     geom_point(data = city_count, aes(lon, lat, size = count * 3000), 
                color = "red", shape = 1) +
+    geom_polygon(data = state_border, aes(long, lat, group = group), color = "black", fill = NA) +
     scale_size_area(max_size = 5)
-ggsave(filename = "figures/block_level_black_killed_us_map.png", width = 12, height = 12)
+ggsave(filename = "figures_temp/block_level_black_killed_us_map.png", width = 12, height = 12)
 
 
 # US west
