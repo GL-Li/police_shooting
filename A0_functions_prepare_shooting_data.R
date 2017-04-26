@@ -93,14 +93,36 @@ city_lon_lat <- function() {
 }
 
 # prepare shooting data =======================================================
+read_shooting_data <- function(unarmed = FALSE) {
+    # read shooting data
+    
+    # args_______
+    # unarmed: logical
+    #    weather the victim is unarmed
+    
+    # returns_____
+    # data.table of shooting database
+    
+    shooting <- fread("downloaded_data/database.csv")
+    # data.table not working in ifelse()
+    # shooting <- ifelse(unarmed, shooting[armed == "unarmed"], shooting)
+    if(unarmed) {
+        shooting <- shooting[armed == "unarmed"]
+    } 
+    return(shooting)
+}
 
-shooting_race_location <- function(){
+shooting_race_location <- function(unarmed = FALSE){
     # This function returns a data.table of all shooting cases. Each row is a 
     # shooting case with location of the incident and race of the shooted.
+    
+    # args_______
+    # unarmed: logical
+    #    weather the victim is unarmed
 
     # keep only race and location
-    shooting <- fread("downloaded_data/database.csv") %>%
-        .[race != ""] %>%          # remove unknown race
+    shooting <- read_shooting_data(unarmed) %>%
+        .[race != ""] %>%         # remove unknown race
         .[, .(race = race, city_state = paste0(city, ", ", state))]
     
     # add city coordinate to shooting data
@@ -109,18 +131,21 @@ shooting_race_location <- function(){
 }
 
 
-shooting_city_count <- function(choose_race = "all") {
+shooting_city_count <- function(choose_race = "all", unarmed = FALSE) {
     # This function returns the number of people of the specified race killed by 
     # police in each city 
     
     # args____________
     # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
     #              and "all" for all races
+    # unarmed: logical
+    #    weather the victim is unarmed
+    
     # return__________
     # a data.table of the number of race killed in each city
     
     # only care race and location here
-    shooting <- shooting_race_location()
+    shooting <- shooting_race_location(unarmed)
     
     # count shooting death in each city of the selected race
     if (choose_race == "all") {
@@ -138,14 +163,16 @@ shooting_city_count <- function(choose_race = "all") {
 }
 
 
-shooting_state_count <- function(choose_race = "all") {
+shooting_state_count <- function(choose_race = "all", unarmed = FALSE) {
     # This function calculate number of cases of police fatal shooting in each 
     # state of selected race
     
     # args_____________
     # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
     #    "all" for all races
-    
+    # unarmed: logical
+    #    weather the victim is unarmed
+
     # returns_________
     # a data.table of the number of selected race killed in each state
     
@@ -159,14 +186,15 @@ shooting_state_count <- function(choose_race = "all") {
     )
     
     if (choose_race == "all"){
-        count <- fread("downloaded_data/database.csv") %>%
+        count <- read_shooting_data(unarmed) %>%
             .[race != ""] %>%          # remove unknown race
             .[, .(state)] %>%
             .[, .(count = .N), by = .(state)] %>%
+            .[state_dt, on = .(state)] %>%  # to add missing state
+            .[is.na(count), count := 0] %>%
             .[order(-count)] 
-        return(count)
     } else {
-        count <- fread("downloaded_data/database.csv") %>%
+        count <- read_shooting_data(unarmed) %>%
             .[race != ""] %>%          # remove unknown race
             .[, .(race, state)] %>%
             .[, .(count = .N), by = .(state, race)] %>%
@@ -175,14 +203,13 @@ shooting_state_count <- function(choose_race = "all") {
             .[state_dt, on = .(state)] %>%  # to add missing state
             .[is.na(count), count := 0] %>%
             .[order(-count)]
-        return(count)
     }
-    
+    return(count)
 }
 
 shooting_count_urban_rural <- function(all_or_black = "all") {
     # This function returns a data.table of police shooting of all races or of 
-    # blacks in urbanized area, urban clusters and rural area of each state
+    # blacks in urbanized area, urban clusters and rural area of each state.
     
     # args_________
     # all_or_black: all races or black race, take values "all" or "black"
