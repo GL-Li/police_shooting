@@ -93,12 +93,13 @@ city_lon_lat <- function() {
 }
 
 # prepare shooting data =======================================================
-read_shooting_data <- function(unarmed = FALSE) {
+read_shooting_data <- function(weapon = "all") {
     # read shooting data
     
     # args_______
-    # unarmed: logical
-    #    weather the victim is unarmed
+    # weapon: string
+    #    weapon the victim was carrying when being shot, "all" for all weapons
+    #    "unarmed" for no weapone, "gun" for guns, ...
     
     # returns_____
     # data.table of shooting database
@@ -106,22 +107,23 @@ read_shooting_data <- function(unarmed = FALSE) {
     shooting <- fread("downloaded_data/database.csv")
     # data.table not working in ifelse()
     # shooting <- ifelse(unarmed, shooting[armed == "unarmed"], shooting)
-    if(unarmed) {
-        shooting <- shooting[armed == "unarmed"]
+    if(weapon != "all") {
+        shooting <- shooting[armed == weapon]
     } 
     return(shooting)
 }
 
-shooting_race_location <- function(unarmed = FALSE){
+shooting_race_location <- function(weapon = "all"){
     # This function returns a data.table of all shooting cases. Each row is a 
     # shooting case with location of the incident and race of the shooted.
     
     # args_______
-    # unarmed: logical
-    #    weather the victim is unarmed
-
+    # weapon: string
+    #    weapon the victim was carrying when being shot, "all" for all weapons
+    #    "unarmed" for no weapone, "gun" for guns, ...
+    
     # keep only race and location
-    shooting <- read_shooting_data(unarmed) %>%
+    shooting <- read_shooting_data(weapon) %>%
         .[race != ""] %>%         # remove unknown race
         .[, .(race = race, city_state = paste0(city, ", ", state))]
     
@@ -131,21 +133,22 @@ shooting_race_location <- function(unarmed = FALSE){
 }
 
 
-shooting_city_count <- function(choose_race = "all", unarmed = FALSE) {
+shooting_city_count <- function(choose_race = "all", weapon = "all") {
     # This function returns the number of people of the specified race killed by 
     # police in each city 
     
     # args____________
     # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
     #              and "all" for all races
-    # unarmed: logical
-    #    weather the victim is unarmed
+    # weapon: string
+    #    weapon the victim was carrying when being shot, "all" for all weapons
+    #    "unarmed" for no weapone, "gun" for guns, ...
     
     # return__________
     # a data.table of the number of race killed in each city
     
     # only care race and location here
-    shooting <- shooting_race_location(unarmed)
+    shooting <- shooting_race_location(weapon)
     
     # count shooting death in each city of the selected race
     if (choose_race == "all") {
@@ -163,16 +166,17 @@ shooting_city_count <- function(choose_race = "all", unarmed = FALSE) {
 }
 
 
-shooting_state_count <- function(choose_race = "all", unarmed = FALSE) {
+shooting_state_count <- function(choose_race = "all", weapon = "all") {
     # This function calculate number of cases of police fatal shooting in each 
     # state of selected race
     
     # args_____________
     # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
     #    "all" for all races
-    # unarmed: logical
-    #    weather the victim is unarmed
-
+    # weapon: string
+    #    weapon the victim was carrying when being shot, "all" for all weapons
+    #    "unarmed" for no weapone, "gun" for guns, ...
+    
     # returns_________
     # a data.table of the number of selected race killed in each state
     
@@ -186,7 +190,7 @@ shooting_state_count <- function(choose_race = "all", unarmed = FALSE) {
     )
     
     if (choose_race == "all"){
-        count <- read_shooting_data(unarmed) %>%
+        count <- read_shooting_data(weapon) %>%
             .[race != ""] %>%          # remove unknown race
             .[, .(state)] %>%
             .[, .(count = .N), by = .(state)] %>%
@@ -194,7 +198,7 @@ shooting_state_count <- function(choose_race = "all", unarmed = FALSE) {
             .[is.na(count), count := 0] %>%
             .[order(-count)] 
     } else {
-        count <- read_shooting_data(unarmed) %>%
+        count <- read_shooting_data(weapon) %>%
             .[race != ""] %>%          # remove unknown race
             .[, .(race, state)] %>%
             .[, .(count = .N), by = .(state, race)] %>%
@@ -207,20 +211,25 @@ shooting_state_count <- function(choose_race = "all", unarmed = FALSE) {
     return(count)
 }
 
-shooting_count_urban_rural <- function(all_or_black = "all", unarmed = FALSE) {
+shooting_count_urban_rural <- function(all_or_black = "all", weapon = "all") {
     # This function returns a data.table of police shooting of all races or of 
     # blacks in urbanized area, urban clusters and rural area of each state.
     
     # args_________
     # all_or_black: all races or black race, take values "all" or "black"
+    # weapon: string
+    #    weapon the victim was carrying when being shot, "all" for all weapons
+    #    "unarmed" for no weapone. Only works for "all" and "unarmed" for now as
+    #    having to eyeballing maps to count for each weapon.
+    
     
     # returns______
     # a data.table of the count of police shooting
     
     # total number killed in each state
-    total_killed <- shooting_state_count(all_or_black, unarmed)
+    total_killed <- shooting_state_count(all_or_black, weapon)
     
-    if (!unarmed) {
+    if (weapon == "all") {
         if (all_or_black == "B") {
             # Number of blacks killed in urban clusters (UC) and rural area.
             # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
@@ -251,7 +260,7 @@ shooting_count_urban_rural <- function(all_or_black = "all", unarmed = FALSE) {
                           16, 0, 0, 6, 4, 6, 2, 0, 0)
             )
         }
-    } else if(unarmed) {
+    } else if(weapon == "unarmed") {
         if (all_or_black == "B") {
             # Number of blacks killed in urban clusters (UC) and rural area.
             # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
