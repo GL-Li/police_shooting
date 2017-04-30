@@ -1,7 +1,7 @@
 # This file define functions to extract 2010 census data and save them to csv files.
-# Last reviewed 1/9/2017
+# Last reviewed 4/29/2017
 
-# The 2010 census data were downloaded, with urban and rural update, from
+# The 2010 census data, with urban and rural update, were downloaded from
 # http://www2.census.gov/census_2010/04-Summary_File_1/Urban_Rural_Update/ 
 # For each state the data were unzipped to its own folder named with its 
 # abbreviation, for example, "MA" for Massachusetts. Under this folder there are
@@ -13,77 +13,21 @@ library(ggmap)
 
 
 # define functions ============================================================
-get_full_geo <- function(state_abbr_vector, zero_to_NA = TRUE) {
-    # This function get the full census data of urban and rural population of
-    # selected states. Keep every row in the data file.
-    
-    # args___________
-    # state_abbr_vector: vector of state abbriviations such as c("MA", "RI")
-    # zero_to_NA: logical
-    #     option to convert numbers zero to NA to reduce the plot point
-    
-    # return_________
-    # a data.table of population of the states in the vector
-    
-    population_list <- list()
-    for (state_abbr in state_abbr_vector) {
-        print(state_abbr)
-        # setup file path, change according to the location of downloaded 2010
-        # census data
-        folder <- paste0("~/dropbox_datasets/US_2010_census/", state_abbr, "/")
-        geofile <- paste0(folder, tolower(state_abbr), "geo2010.ur1")
-        f02file <- paste0(folder, tolower(state_abbr), "000022010.ur1")
-
-        # read data
-        print("read geofile")
-        geo <- fread(geofile, sep = "\n", header = FALSE)
-        
-        # replace unicodes with "9" in geofile of these state. A unicode such as
-        # "\xf1" is treated as one letter. They are Spanish letters.
-        # Do not break it apart.
-        if (state_abbr %in% c("US", "TX", "NM", "CA", "AZ", "CO")) {
-            geo[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
-        }
-        
-        print("read f02file")
-        f02 <- fread(f02file, header = FALSE)
-
-        # extract data. Read 2010 census summary 1 documentation to understand 
-        # each file. http://www.census.gov/prod/cen2010/doc/sf1.pdf 
-        # In particular chapter 6: data dictionary.
-        population <- geo[, .(state = state_abbr,
-                              level_code = substr(V1, 9, 11), 
-                              geo_component = substr(V1, 12, 13),
-                              lat = as.numeric(substr(V1, 337, 347)),
-                              lon = as.numeric(substr(V1, 348, 359)))] %>%
-            .[, total := f02[, V6]] %>%
-            .[, urban := f02[, V7]] %>%
-            .[, urban_area := f02[, V8]] %>%
-            .[, urban_cluster := f02[, V9]] %>%
-            .[, rural := f02[, V10]]
-        
-        # convert zero to NA
-        if (zero_to_NA) {
-            # the method is copied from Edit2 of the answer by Matt Dowle at
-            # http://stackoverflow.com/questions/7235657/fastest-way-to-replace-nas-in-a-large-data-table
-            for (i in seq_along(population)) {
-                set(population, i = which(population[[i]] == 0), j = i, value = NA)
-            }
-        }
-        
-        population_list[[state_abbr]] <- population
-    }
-    rbindlist(population_list)
-}
-
-
-get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE) {
+get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
+                              read_geo = TRUE, read_race = TRUE) {
     # This function get the full census data of urban and rural population, and 
-    # races. Keep every row in the data file.
+    # races. Keep all rows in the summary data file. The return just add columns
+    # of races to that of get_full_geo(). Keep it as a seperate function.
     
     # args___________
-    # state_abbr_vector: vector of state abbriviations such as c("MA", "RI")
-    # zero_to_NA: option to convert numbers zero to NA to reduce the plot point
+    # state_abbr_vector : string vector
+    #     vector of state abbriviations such as c("MA", "RI")
+    # zero_to_NA : logical
+    #     option to convert numbers zero to NA to reduce the plot point
+    # read_geo : logical
+    #     weather to read population in geo-component, such as urban and rural
+    # read_race : logical
+    #     weather to read race population
     
     # return_________
     # a data.table of population in the state vector
@@ -100,33 +44,39 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE) {
         
         # read data
         print("read geofile")
-        geo <- fread(geofile, sep = "\n", header = FALSE)
+        geo_code <- fread(geofile, sep = "\n", header = FALSE)
         # replace unicodes in geofile of these state 
         if (state_abbr %in% c("US", "TX", "NM", "CA", "AZ", "CO")) {
-            geo[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
+            geo_code[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
         }
-        print("read f02file")
-        f02 <- fread(f02file, header = FALSE)
-        print("read f03file")
-        f03 <- fread(f03file, header = FALSE)
         
         # extract data
-        population <- geo[, .(state = state_abbr,
-                              level_code = substr(V1, 9, 11), 
+        population <- geo_code[, .(state = state_abbr,
+                              level_code = substr(V1, 9, 11),
                               geo_component = substr(V1, 12, 13),
                               lat = as.numeric(substr(V1, 337, 347)),
-                              lon = as.numeric(substr(V1, 348, 359)))] %>%
-            .[, total := f02[, V6]] %>%
-            .[, urban := f02[, V7]] %>%
-            .[, urban_area := f02[, V8]] %>%
-            .[, urban_cluster := f02[, V9]] %>%
-            .[, rural := f02[, V10]] %>%
-            .[, white := f03[, V7]] %>%
-            .[, black := f03[, V8]] %>%
-            .[, asian := f03[, V10]]
+                              lon = as.numeric(substr(V1, 348, 359)))] 
+        if (read_geo){
+            print("read f02file")
+            f02 <- fread(f02file, header = FALSE)
+            population[, total := f02[, V6]] %>%
+                .[, urban := f02[, V7]] %>%
+                .[, urban_area := f02[, V8]] %>%
+                .[, urban_cluster := f02[, V9]] %>%
+                .[, rural := f02[, V10]]
+        }
+        if (read_race){
+            print("read f03file")
+            f03 <- fread(f03file, header = FALSE)
+            population[, white := f03[, V7]] %>%
+                .[, black := f03[, V8]] %>%
+                .[, asian := f03[, V10]]
+        }
         
         # convert zero to NA
         if (zero_to_NA) {
+            # the method is copied from Edit2 of the answer by Matt Dowle at
+            # http://stackoverflow.com/questions/7235657/fastest-way-to-replace-nas-in-a-large-data-table
             for (i in seq_along(population)) {
                 set(population, i = which(population[[i]] == 0), j = i, value = NA)
             }
@@ -145,9 +95,10 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7) {
     
     # args_______
     # state_abbr: abbreviation of a state, such as "MA" and "FL"
-    # state_full_geo: the data.table obtained from function get_full_geo(). This
-    #                 function runs a long time. So get it done outside of the 
-    #                 plot_urban_rural_on_map function.
+    # state_full_geo: the data.table obtained from function 
+    #     get_full_geo_race(read_race = FALSE). This
+    #     function runs a long time. So get it done outside of the 
+    #     plot_urban_rural_on_map function.
     # zoom: zoom when using get_map() to download map data. Adjust accordingly.
     
     # returns_____

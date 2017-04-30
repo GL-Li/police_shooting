@@ -7,6 +7,20 @@ library(magrittr)
 library(ggmap)
 
 # define geological functions =================================================
+cap_words_1st_letter <- function(words) {
+    # This function to capitalize first letter of each words, for example, 
+    # "rhode island" to "Rhode Island"
+    
+    # modified from http://stackoverflow.com/questions/6364783/capitalize-the-first-letter-of-both-words-in-a-two-word-string
+    
+    # args______
+    # words : string vector
+    
+    # returns______
+    # Same words string with capitalized first letter of each words
+
+    gsub("(^|[[:space:]])([[:alpha:]])", "\\1\\U\\2", tolower(words), perl=TRUE)
+}
 
 convert_state_names <- function(state_names, from, to) {
     # This function converts state names between lower case and abbriavation
