@@ -93,7 +93,7 @@ plot_shooting_US_map <- function(race = "all", weapon = "all"){
     
     # takes a very long time to plot and save, need 6G memory to process
     print("Be patient. Needs 6G memory and takes a long time.")
-    save_as <- paste0("figures_temp/", race, "_killed_US_map_block_level.png")
+    save_as <- paste0("figures_temp/", race, "_with_", weapon, "_killed_US_map_block_level.png")
     ggmap(us_map) +
         geom_point(data = block[!is.na(rural)], aes(lon, lat, size = rural),
                    alpha = 0.7, color = "cyan", stroke = 0) +
@@ -108,7 +108,7 @@ plot_shooting_US_map <- function(race = "all", weapon = "all"){
         geom_path(data = state_border, aes(long, lat, group = group), color = "black", alpha = 0.5) +
         scale_size_area(max_size = 5)
     ggsave(filename = save_as, width = 12, height = 12)
-    print(paste("Figure saved:", save_as))
+    print(paste("Figure saved as:", save_as))
 }
 
 

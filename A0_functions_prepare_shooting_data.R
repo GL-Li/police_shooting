@@ -298,6 +298,42 @@ shooting_count_urban_rural <- function(all_or_black = "all", weapon = "all") {
                 rural = c(0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1)
             )
         }
+    } else if(weapon == "gun") {
+        if (all_or_black == "B") {
+            # Number of blacks killed in urban clusters (UC) and rural area.
+            # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
+            # This number is for shooting cases in 2015 and 2016.
+            # Have to recount for updated shooting database.
+            killed_UC_rural <- data.table(
+                state = c("AL", "CA", "CO", "FL", "GA", "HI", "IL", "IN", "KS", "KY",
+                          "LA", "MS", "OK", "OR", "SC", "TX", "VA"),
+                UC =    c(3, 1, 1, 1, 1, 1, 1, 0, 1, 1,   1, 1, 3, 0, 1, 0, 1),
+                rural = c(1, 0, 0, 1, 1, 0, 0, 1, 0, 1,   1, 0, 1, 1, 2, 1, 1)
+            )
+            
+        }
+        
+        if (all_or_black == "all") {
+            # total number killed (sum of all area) in each state, count from the same
+            # file. Numbers are for 2015 and 2016 shooting.
+            killed_UC_rural <- data.table(
+                state = c("WA", "ID", "MT", "OR", "CA", "NV", "UT", "CO", "AZ", "NM",
+                          "TX", "AL", "AR", "FL", "GA", "IL", "IN", "IA", "KS", "AK",
+                          "HI", "KY", "LA", "ME", "MI", "MN", "MS", "MO", "NE", "NH",
+                          "NJ", "NY", "NC", "ND", "OH", "OK", "PA", "SC", "SD", "TN", 
+                          "VA", "WV", "WI"),
+                UC    = c(2, 3, 2, 2, 7, 1, 2, 3, 7, 13,
+                          10, 8, 2, 1, 9, 4, 2, 1, 3, 0, 
+                          3, 8, 1, 0, 1, 2, 2, 3, 0, 1,
+                          1, 1, 6, 0, 3, 1, 0, 3, 2, 5,
+                          2, 2, 3),
+                rural = c(1, 3, 0, 3, 6, 1, 0, 3, 3, 3,
+                          8, 4, 2, 3, 2, 2, 1, 1, 3, 1,
+                          0, 8, 3, 1, 3, 2, 3, 2, 1, 0, 
+                          0, 3, 6, 1, 1, 9, 2, 4, 1, 3,
+                          5, 3, 2)
+            )
+        }
     }
     
     total_killed <- killed_UC_rural[total_killed, on = .(state)] %>%

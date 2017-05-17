@@ -33,6 +33,12 @@ There is a clear uptrend of disparity when plotted against vote for Obama in 201
 <img src="figures/disparity_vote_UA.png" alt="disparity ratio all area" style="width: 800px;"/>
 
 
+### Unarmed civilians
+The disparity ratio in unarmed civilians shot and killed by police is often used as a better indicator of the role of racism in police shooting. These shooting occurred when police officers 
+
+<img src="figures/geo_disparity_unarmed.png" alt="disparity ratio unarmed" style="width: 600px;"/>
+
+
 ## Data preparation
 ### Fatal police shooting in larger urban area, small urban area, and rural area
 The location of the shootings provided in the Washington Post database is down to city/town level. We do not know whether it is a larger urban area, small urban area, or rural area. In order to identify the nature of the location, we plot the shooting on top of population map. The map, which is produced using 2010 national census data, shows the region of large urban, small urban, and rural areas. Eyeballing the map, we can count easily the number of shooting in small urban areas and rural areas. The remaining shooting cases are in large urban areas.
