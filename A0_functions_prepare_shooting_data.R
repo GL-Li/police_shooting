@@ -233,8 +233,8 @@ shooting_count_urban_rural <- function(all_or_black = "all", weapon = "all") {
     # all_or_black: all races or black race, take values "all" or "black"
     # weapon: string
     #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone. Only works for "all" and "unarmed" for now as
-    #    having to eyeballing maps to count for each weapon.
+    #    "unarmed" for no weapone. Only works for "all", "gun", "knife" and "unarmed" 
+    # for now as having to eyeballing maps to count for each weapon.
     
     
     # returns______
@@ -334,7 +334,32 @@ shooting_count_urban_rural <- function(all_or_black = "all", weapon = "all") {
                           5, 3, 2)
             )
         }
-    }
+    } else if(weapon == "knife") {
+        if (all_or_black == "B") {
+            # Number of blacks killed in urban clusters (UC) and rural area.
+            # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
+            # This number is for shooting cases in 2015 and 2016.
+            # Have to recount for updated shooting database.
+            killed_UC_rural <- data.table(       # empty 
+                state = c("DC"),
+                UC =    c(0),
+                rural = c(0)
+            )
+            
+        }
+        
+        if (all_or_black == "all") {
+            # total number killed (sum of all area) in each state, count from the same
+            # file. Numbers are for 2015 and 2016 shooting.
+            killed_UC_rural <- data.table(
+                state = c("AK", "AZ", "CA", "FL", "GA", "HI", "IL", "KS", "MN", 
+                          "MT", "NE", "NH", "NM", "NY", "NC", "OK", "SC", "TN", 
+                          "TX", "VA", "WA", "WI", "WY"),
+                UC    = c(1, 3, 3, 1, 0, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 0, 2, 4, 1, 0, 1, 2),
+                rural = c(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0)
+            )
+        }
+    } 
     
     total_killed <- killed_UC_rural[total_killed, on = .(state)] %>%
         .[is.na(UC), UC := 0] %>%

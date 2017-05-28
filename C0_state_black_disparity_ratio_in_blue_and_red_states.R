@@ -210,8 +210,8 @@ get_binned_state_geo <- function(choose_geo = "all_geo", weapon = "all") {
     #     "rural".
     # weapon: string
     #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone. Only works for "all" and "unarmed" for now as
-    #    having to eyeballing maps to count for each weapon.
+    #    "unarmed" for no weapone. Only works for "all", "gun", "knife" and "unarmed" 
+    # for now as having to eyeballing maps to count for each weapon.
     
     
     # number of black people killed in the choose_geo
