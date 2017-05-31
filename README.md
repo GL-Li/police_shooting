@@ -64,31 +64,3 @@ _Number of black / non-black people fatally shot by police in blue states and re
 |blue states| 281 / 596        | 14 / 69          | 1 / 65     |
 |red states | 171 / 296        | 20 / 131         | 3 / 112    |
 
-<table style="width:100%">
-<caption><p align="left">caption default at center but can be move to left with p tage</p></caption>
-<caption align="bottom"><p align="right">place source at bottom right with caption and p tags</p></caption>
-
-<style>
-table { border-collapse: collapse; }
-</style>
-  <tr style="border-bottom:2px blue solid"; align="left">
-    <th></th>
-    <th>Lastname</th> 
-    <th>Age</th>
-  </tr>
-  <tr style="border-bottom:green solid thin">
-    <td>Jill</td>
-    <td>Smith</td>
-    <td>50</td>
-  </tr>
-  <tr style="border-bottom:green solid thin">
-    <td>Eve</td>
-    <td>Jackson</td>
-    <td style="background:grey">94</td>
-  </tr>
-  <tr style="border-bottom:green solid thin">
-    <td>John</td>
-    <td>Doe</td>
-    <td>80</td>
-  </tr>
-</table>
