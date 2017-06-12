@@ -393,3 +393,11 @@ vote_obama_2012 <- function(){
                       35.54, 52.83, 27.82)
     )
 }
+
+is_red_or_blue <- function(state_name) {
+    # determing if a state is a blue or red state
+    vote <- vote_obama_2012()
+    perc <- vote[state == state_name, perc_vote]
+    if (perc < 50) return("red")
+    else return("blue")
+}

@@ -1,10 +1,10 @@
-# Fatal Police Shooting: Blue States Are Deadly for Black People
+# Black people are more likely to be killed by police but do not blame racism
 This project analyzes the [Washington Post police shooting database](https://github.com/washingtonpost/data-police-shootings) of civilians shot and killed by on-duty police officers in the United States in year 2015 and 2016. 
 
 ## Summary
-About 1000 civilians are shot and killed by police officers each year in the United States. Black people are more than twice as likely to be killed as non-black people. Racism is often blamed for this disparity. 
+Black people are more than twice as likely to be shot and killed by police officers as non-black people. In 2015-2016, xxxx people were fatally shot by on-duty police officers, as shown in the Washington Post police shooting database. Among those killed, xxx% are black people, while black people are only about xxx% of the total population. 
 
-If racism does play a role, we would expect smaller disparity in blue states than in red states, as black people are believed to face less discrimination in blue states. 
+Racism is often blamed for this disparity. If racism does play a role, we would expect smaller disparity in blue states than in red states, as black people are believed to face less discrimination in blue states. 
 
 Surprisingly, the analysis of the Washington Post shooting database shows that the disparity is much larger in blue states than in red states. If we use this disparity as a measure of racism, blue states discriminate against black people more than red states do. 
 
