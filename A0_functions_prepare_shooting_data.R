@@ -8,7 +8,7 @@ library(ggmap)
 
 # define geological functions =================================================
 cap_words_1st_letter <- function(words) {
-    # This function to capitalize first letter of each words, for example, 
+    # This function capitalizes first letter of each words, for example, 
     # "rhode island" to "Rhode Island"
     
     # modified from http://stackoverflow.com/questions/6364783/capitalize-the-first-letter-of-both-words-in-a-two-word-string

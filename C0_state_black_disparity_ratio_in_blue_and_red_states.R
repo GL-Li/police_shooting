@@ -24,7 +24,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
                             size_breaks = NULL,
                             fill_breaks = NULL,
                             annotation = NULL) {
-    # This function plot the relationship between disparity ratio and vote for
+    # This function plots the relationship between disparity ratio and vote for
     # Obama in 2012 election for each state. States with more than 3 blacks killed or
     # more than 300,000 black population state-wide are highlighted.
     
@@ -41,7 +41,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     # annotation: label for annotate(), default provided below
     
     # return______________
-    # a save png figure
+    # a saved png figure
 
     ###
     ### select states that has more than 3 blacks killed OR more than 300,000
@@ -147,17 +147,18 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
         geom_smooth(aes(weight = black_population), method = "lm", se = FALSE, color = "black", linetype = 2, size = 0.2) +
         
         # title, axis and legends === 
-        ggtitle(title) +
-        scale_x_continuous("Vote for Obama in 2012 presidential election",
-                           breaks = c(30, 50, 70, 90), 
+        labs(title = title,
+             x = "Vote for Obama in 2012 presidential election",
+             y = ylabel,
+             size = "black\npopulation\n(million)",
+             fill = "number of\nblacks killed") +
+        scale_x_continuous(breaks = c(30, 50, 70, 90), 
                            labels = paste0(c(30, 50, 70, 90), "%")) +
-        scale_y_continuous(ylabel, breaks = seq(0, 11, 2)) +
-        scale_size_area("black\npopulation\n(million)",
-                        breaks = size_breaks,
+        scale_y_continuous(breaks = seq(0, 11, 2)) +
+        scale_size_area(breaks = size_breaks,
                         guide = guide_legend(order = 1,   # first legend
                                              override.aes = list(shape = 1))) +
-        scale_fill_gradient("number of\nblacks killed", 
-                            low = "white", high = "black", 
+        scale_fill_gradient(low = "white", high = "black", 
                             breaks = fill_breaks,
                             guide = guide_legend(order = 2,   # second legend
                                                  override.aes = list(size=4))) +
@@ -587,7 +588,7 @@ plot_grouped_state_2 <- function(weapon = "all") {
 
         # add title
         annotate("text", x = 0, y = 43, hjust = 0, size = 4.5, parse = TRUE,
-                 label = 'bold("Fatal Police Shooting in       and         states")') +
+                 label = 'bold("Fatal Police Shooting in       and         states in 2015 and 2016")') +
         # sad that geom_text not good at text color, have to di it this way
         annotate("text", x = 9.65, y = 43.15, hjust = 0, color = "red", size = 4.5, parse = TRUE,
                  label = 'bold("red")') +
