@@ -16,7 +16,7 @@ source("A0_functions_extract_census_data.R")
 # and rural area in cyan. The location of shooting is marked with a red cycle
 # and the cycle area represents number of shooting. 
 plot_shooting_on_state_map <- function(state, center = NULL, zoom = 7,
-                                       race = "all", weapon = "all"){
+                                       choose_race = "*", weapon = "*"){
     # plot location and number of shooting in the map of a state
     
     # args_______
@@ -35,15 +35,15 @@ plot_shooting_on_state_map <- function(state, center = NULL, zoom = 7,
     # returns______
     #     plot and save a figure, no return
     
-    city_count <- shooting_city_count(race, weapon)
+    city_count <- count_shooting_city(choose_race, weapon)
     geo <- get_full_geo_race(state, read_race = FALSE)
     if (is.null(center)) {
         center = state
     }
     
     # use full race name
-    race <- switch(race,
-                   "all" = "all_races",
+    race <- switch(choose_race,
+                   "*" = "all_races",
                    "B" = "black",
                    "W" = "white",
                    "A" = "asian")
@@ -64,7 +64,7 @@ plot_shooting_on_state_map <- function(state, center = NULL, zoom = 7,
 
 
 # plot shooting on national map ===============================================
-plot_shooting_US_map <- function(race = "all", weapon = "all"){
+plot_shooting_US_map <- function(choose_race = "*", weapon = "*"){
     # plot shooting location and count on US geo-population map
     
     # args______
@@ -76,11 +76,11 @@ plot_shooting_US_map <- function(race = "all", weapon = "all"){
     # returns______
     # save a plot, no return
     
-    city_count <- shooting_city_count(race, weapon)
+    city_count <- count_shooting_city(choose_race, weapon)
     
     # use full race name
-    race <- switch(race,
-                   "all" = "all_races",
+    race <- switch(choose_race,
+                   "*" = "all_races",
                    "B" = "black",
                    "W" = "white",
                    "A" = "asian")

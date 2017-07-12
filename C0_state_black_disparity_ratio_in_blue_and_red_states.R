@@ -17,7 +17,7 @@ source("A0_functions_extract_census_data.R")
 # disparity ration of each state ==============================================
 
 # define the function to make plot
-plot_ratio_vote <- function(choose_geo = "all_geo", 
+plot_ratio_vote <- function(choose_geo = "*", 
                             save_as = paste0(choose_geo, "_ratio.png"),
                             title = NULL,
                             ylabel = NULL,
@@ -46,7 +46,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     ###
     ### select states that has more than 3 blacks killed OR more than 300,000
     ###
-    black_killed_all_geo <- shooting_state_count("B")
+    black_killed_all_geo <- count_shooting_state("B")
     total_black_population <- get_total_geo_population("all_geo") %>%
         .[, .(state, black)]
     selected_states <- black_killed_all_geo[total_black_population, on = .(state)] %>%
@@ -56,17 +56,23 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
     ### prepare data
     ###
     # number of black people killed in the choose_geo
-    black_killed <- shooting_count_urban_rural("B") %>%
-        .[, black_killed := .[[choose_geo]]] %>%    # use variable as column name
-        .[, .(state, black_killed)]                 # and [[]] to return a vector
+    geo <- switch(choose_geo,
+                  "*" = "all_geo",
+                  "UA" = "UA",
+                  "UC" = "UC",
+                  "rural" = "rural",
+                  "urban" = "urban")
+    black_killed <- count_shooting_urban_rural("B") %>%
+        .[, black_killed := .[[geo]]] %>%    # use variable as column name
+        .[, .(state, black_killed)]          # and [[]] to return a vector
     
     # number of all known races killed in the choose_geo
-    total_killed <- shooting_count_urban_rural("all") %>%
-        .[, total_killed := .[[choose_geo]]] %>%
+    total_killed <- count_shooting_urban_rural("*") %>%
+        .[, total_killed := .[[geo]]] %>%
         .[, .(state, total_killed)]
     
     # black population in choose_geo of each state in 2010 census
-    black_population <- get_total_geo_population(choose_geo) %>%
+    black_population <- get_total_geo_population(geo) %>%
         .[, population_percent := round(100 * black / total, 2)] %>%
         .[, .(state, black_population = black, population_percent)]
     
@@ -200,7 +206,7 @@ plot_ratio_vote <- function(choose_geo = "all_geo",
 
 
 # disparity ratio of states binned as red and blue states ============
-get_binned_state_geo <- function(choose_geo = "all_geo", weapon = "all") {
+get_binned_state_geo <- function(choose_geo = "*", weapon = "*") {
     # This function returns population and people killed by police in
     # binned red state (50% or less vote for obama in 2012 election) and blue 
     # state (50% more vote for Obama) of the chosen geo-component. Disparity ratio
@@ -216,18 +222,25 @@ get_binned_state_geo <- function(choose_geo = "all_geo", weapon = "all") {
     
     
     # number of black people killed in the choose_geo
-    black_killed <- shooting_count_urban_rural("B", weapon) %>%
-        .[, black_killed := .[[choose_geo]]] %>%    # use variable as column name
+    geo <- switch(choose_geo,
+                  "*" = "all_geo",
+                  "UA" = "UA",
+                  "UC" = "UC",
+                  "rural" = "rural",
+                  "urban" = "urban")
+    
+    black_killed <- count_shooting_urban_rural("B", weapon) %>%
+        .[, black_killed := .[[geo]]] %>%    # use variable as column name
         .[, .(state, black_killed)]
     
     # number of all known races killed in the choose_geo
-    total_killed <- shooting_count_urban_rural("all", weapon) %>%
-        .[, total_killed := .[[choose_geo]]] %>%
+    total_killed <- count_shooting_urban_rural("*", weapon) %>%
+        .[, total_killed := .[[geo]]] %>%
         .[, .(state, total_killed)]
     
     
     # total and black population in each state in 2010 census
-    total_and_black_population <- get_total_geo_population(choose_geo) %>%
+    total_and_black_population <- get_total_geo_population(geo) %>%
         .[, .(state, total_population = total, 
               black_population = black)]
     
@@ -260,7 +273,7 @@ get_binned_state_geo <- function(choose_geo = "all_geo", weapon = "all") {
                                                       (sum_total_population -sum_black_population) * 1e6, 2)] %>%
         .[, disparity_ratio := round(black_killed_per_million / non_black_killed_per_million, 2)] %>%
         .[, geo_component := switch(choose_geo, 
-                                    "all_geo" = "all area",
+                                    "*" = "all area",
                                     "urban" = "urban area",
                                     "UA" = "urbanized area",
                                     "UC" = "urban cluster",
@@ -268,7 +281,7 @@ get_binned_state_geo <- function(choose_geo = "all_geo", weapon = "all") {
 }
 
 
-plot_grouped_state_1 <- function(weapon = "all") {
+plot_grouped_state_1 <- function(weapon = "*") {
     # This function plot disparity ratio and number of people per million killed by police in 
     # grouped blue and red states
     
@@ -280,7 +293,7 @@ plot_grouped_state_1 <- function(weapon = "all") {
     
     
     # prepare data ===
-    all_geo <- get_binned_state_geo("all_geo", weapon)
+    all_geo <- get_binned_state_geo("*", weapon)
     UA <- get_binned_state_geo("UA", weapon)
     UC <- get_binned_state_geo("UC", weapon)
     rural <- get_binned_state_geo("rural", weapon)
@@ -402,7 +415,7 @@ plot_disparity_ratio_geo <- function() {
     # plot number of people per million killed by police in binned blue and red
     # states
     
-    all_geo <- get_binned_state_geo("all_geo")
+    all_geo <- get_binned_state_geo()
     UA <- get_binned_state_geo("UA")
     UC <- get_binned_state_geo("UC")
     rural <- get_binned_state_geo("rural")
@@ -479,7 +492,7 @@ plot_disparity_ratio_geo <- function() {
 
 
 # revised disparity ratio in blue states and red states as groups =============
-plot_grouped_state_2 <- function(weapon = "all") {
+plot_grouped_state_2 <- function(weapon = "*") {
     # This function plot disparity ration and number of people per million killed by police in 
     # grouped blue and red states at state level
     
@@ -491,7 +504,7 @@ plot_grouped_state_2 <- function(weapon = "all") {
     
     
     # prepare data ===
-    all_geo <- get_binned_state_geo("all_geo", weapon)
+    all_geo <- get_binned_state_geo()
     UA <- get_binned_state_geo("UA", weapon)
     UC <- get_binned_state_geo("UC", weapon)
     rural <- get_binned_state_geo("rural", weapon)
@@ -618,7 +631,7 @@ plot_grouped_state_3 <- function(weapon = "unarmed") {
     # Need to fine tune parameters so define as a separate function
     
     # prepare data ===
-    all_geo <- get_binned_state_geo("all_geo", weapon)
+    all_geo <- get_binned_state_geo("*", weapon)
     UA <- get_binned_state_geo("UA", weapon)
     UC <- get_binned_state_geo("UC", weapon)
     rural <- get_binned_state_geo("rural", weapon)

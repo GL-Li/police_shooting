@@ -1,10 +1,15 @@
 # This file defines functions for preparing Washington Post fatal police shooting data.
-# Last reviewed 4/24/2017
+# Last reviewed 7/9/2017
 
 
 library(data.table)
 library(magrittr)
 library(ggmap)
+library(geosphere)
+library(stringr)
+
+# load function to extract census data
+source("A0_functions_extract_census_data.R")
 
 # define geological functions =================================================
 cap_words_1st_letter <- function(words) {
@@ -93,86 +98,159 @@ city_lon_lat <- function() {
     # shooting death occured
     
     # downloading city coordinates takes a long time. save the download to local 
-    # computer as a csv file
+    # computer as a csv file. When update, only download new cities that are not
+    # previously downloaded
     if (!file.exists("downloaded_data/city_coord.csv")) {
         # keep only location information from raw data
-        shooting <- fread("downloaded_data/database.csv") %>%
-            .[, .(city_state = paste0(city, ", ", state))]
+        cities <- fread("downloaded_data/database.csv") %>%
+            .[, paste0(city, ", ", state)] %>%
+            unique()
         
-        city_coord <- data.table(geocode(unique(shooting[, city_state]))) # no duplicate
-        city_coord[["city_state"]] <- unique(shooting[, city_state])
+        # need more complete address for geocode to avoid confusion
+        geo_cities <- fread("downloaded_data/database.csv") %>%
+            .[, paste0(city, ", ", convert_state_names(state, "abbr", "low"), " ,USA")] %>%
+            unique()
+        
+        city_coord <- data.table(geocode(geo_cities)) # no duplicate
+        city_coord[["city_state"]] <- cities
         write.csv(city_coord, file = "downloaded_data/city_coord.csv", row.names = FALSE)
+    } else {
+        # check for new cities
+        all_cities <- fread("downloaded_data/database.csv") %>%
+            .[, .(city_state = paste0(city, ", ", state))] %>%
+            .[, unique(city_state)]
+        prev_cities <- fread("downloaded_data/city_coord.csv") %>%
+            .[, city_state]
+        new_cities <- setdiff(all_cities, prev_cities)
+        
+        # download coordinates for new cities and combined with previous ones
+        if (length(new_cities) > 0){
+            new_geo_cities <- paste0(str_replace(new_cities, "..$", ""),
+                                     convert_state_names(str_extract(new_cities, "..$"), "abbr", "low"),
+                                     ", USA")
+            new_coord <- data.table(geocode(new_geo_cities))
+            new_coord[["city_state"]] <- new_cities
+            all_coord <- rbindlist(list(fread("downloaded_data/city_coord.csv"), new_coord))
+            write.csv(all_coord, file = "downloaded_data/city_coord.csv", row.names = FALSE)
+        }
     }
-    city_coord <- fread("downloaded_data/city_coord.csv")
+    city_coord <- fread("downloaded_data/city_coord.csv") %>%
+        # mistake in download, correct it manually
+        .[city_state == "Rockville, GA", ":=" (lon = -83.21877, lat = 33.32764)]
+}
+
+
+identify_area <- function(latitude, longitude, state) {
+    # This function identifies locations at (latitude, longitude) as urban areas,
+    # urban clusters, or rural areas.
+    
+    # args______________________
+    # latitude, longitude : numeric 
+    #     vectors of latitude and longitude of the locations
+    # state : character
+    #     abbriation of the state where the location is in, for example "MA", "CA"
+    
+    # return____________________
+    # area_name : character
+    #     vector of area name as one of "large urban area", "small urban area",
+    #     "rural area"
+    
+    # get census data at block level
+    block <- get_full_geo_race(state) %>%
+        .[level_code == "100"] %>%     # level code for block is "100" instead of 101
+        .[, .(lat, lon, urban_area, urban_cluster, rural)] %>%
+        setkey(lat, lon)
+    
+    # place holder for the return area names
+    area_name <- rep(NA, length(latitude))
+    
+    for (i in seq_along(latitude)) {
+        if (mod(i, 100) == 0) print(i)
+        lati <- latitude[i]
+        longi <- longitude[i]
+        
+        # draw a box arround the location. If no blocks found, expand the box
+        for (j in c(0.1, 1, 3, 6, 10, 15, 20, 50, 100)) {
+            dif <- j * 0.01
+            selected <- block[abs(lat - lati) + abs(lon - longi) < dif] %>%
+                # the selected blocks must also have people living in
+                .[is.na(urban_area) + is.na(urban_cluster) + is.na(rural) != 3]
+            if (nrow(selected) > 0) break
+        }
+        
+        # geocoding of city very occasionally downloads wrong coordinate, skip 
+        # this mistake
+        if (nrow(selected) == 0) {
+            area_name[i] <- NA
+        } else {
+            # find the nearest block to the location and find which area it is called
+            area_name[i] <- selected %>%
+                # add column showing distance to c(lati, longi), 
+                # distm() work for matrix and vectors, not good for columns
+                .[, dist := distm(c(longi, lati), as.matrix(.[,.(lon, lat)]))[1,]] %>%
+                # find the row with minimun distance, keep only areas
+                .[dist == min(dist), .(urban_area, urban_cluster, rural)] %>%
+                # keep the area with non-zero population
+                colSums() %>%
+                which.max() %>%
+                names()
+        }
+    }
+    return(area_name)
 }
 
 # prepare shooting data =======================================================
-read_shooting_data <- function(weapon = "all") {
-    # read shooting data
+
+read_shooting_data <- function(choose_race = "*", weapon = "*", geo = "*") {
+    # read shooting data of selected race, weapon, and geo-component
     
     # args_______
+    # choose_race: string
+    #    race of the victim, takes values of "W", "B", "H", "A", ...,
+    #    default "*" for all races
     # weapon: string
-    #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone, "gun" for guns, ...
+    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    #    "knife", ..., default "*" for all weapons
+    # geo: string
+    #    take values "urban_area", "urban_cluster", and "rural". default "*" for
+    #    all geo-components
     
     # returns_____
-    # data.table of shooting database
+    # data.table of improved shooting database
     
-    shooting <- fread("downloaded_data/database.csv")
-    # data.table not working in ifelse()
-    # shooting <- ifelse(unarmed, shooting[armed == "unarmed"], shooting)
-    if(weapon != "all") {
-        shooting <- shooting[armed == weapon]
-    } 
-    return(shooting)
+    shooting <- fread("downloaded_data/database_improved.csv") %>%
+        # %like% is so cool, usage: vector %like% pattern
+        .[race %like% choose_race] %>% 
+        .[armed %like% weapon] %>%
+        .[urban_rural %like% geo]
 }
 
-shooting_race_location <- function(weapon = "all"){
-    # This function returns a data.table of all shooting cases. Each row is a 
-    # shooting case with location of the incident and race of the shooted.
+
+count_shooting_city <- function(choose_race = "*", weapon = "*", geo = "*") {
+    # This function returns the number of selected race and weapon in each city 
+    # of selected geo-component, of known race. Unknow race cases are removed.
     
     # args_______
+    # choose_race: string
+    #    race of the victim, takes values of "W", "B", "H", "A", ...
+    #    default "*" for all races
     # weapon: string
-    #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone, "gun" for guns, ...
-    
-    # keep only race and location
-    shooting <- read_shooting_data(weapon) %>%
-        .[race != ""] %>%         # remove unknown race
-        .[, .(race = race, city_state = paste0(city, ", ", state))]
-    
-    # add city coordinate to shooting data
-    city_coord <- city_lon_lat()
-    shooting <- city_coord[shooting, on = "city_state"]
-}
-
-
-shooting_city_count <- function(choose_race = "all", weapon = "all") {
-    # This function returns the number of people of the specified race killed by 
-    # police in each city 
-    
-    # args____________
-    # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
-    #              and "all" for all races
-    # weapon: string
-    #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone, "gun" for guns, ...
+    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    #    "knife", ..., default "*" for all weapons
+    # geo: string
+    #    take values "urban_area", "urban_cluster", and "rural". default "*" for
+    #    all geo-components
     
     # return__________
     # a data.table of the number of race killed in each city
     
-    # only care race and location here
-    shooting <- shooting_race_location(weapon)
+    # remove shooting of unknown race
+    shooting <- read_shooting_data(choose_race, weapon, geo) %>%
+        .[race != ""]
     
     # count shooting death in each city of the selected race
-    if (choose_race == "all") {
-        city_count <- shooting[, .(count = .N), by = .(city_state)] %>%
-            .[order(-count)]
-    } else {
-        city_count <- shooting[race == choose_race] %>%
-            .[, .(count = .N), by = .(city_state)] %>%
-            .[order(-count)]
-    }
+    city_count <- shooting[, .(count = .N), by = .(city_state)] %>%
+        .[order(-count)]
 
     # add lon and lat to city_count
     city_coord <- city_lon_lat()
@@ -180,21 +258,26 @@ shooting_city_count <- function(choose_race = "all", weapon = "all") {
 }
 
 
-shooting_state_count <- function(choose_race = "all", weapon = "all") {
+count_shooting_state <- function(choose_race = "*", weapon = "*", geo = "*") {
     # This function calculate number of cases of police fatal shooting in each 
-    # state of selected race
+    # state of selected race, weapon and geo-component
     
-    # args_____________
-    # choose_race: "W" for white, "B" for black, "H" for hispanic, "A" for asian,
-    #    "all" for all races
+    # args_______
+    # choose_race: string
+    #    race of the victim, takes values of "W", "B", "H", "A", ...
+    #    default "*" for all races
     # weapon: string
-    #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone, "gun" for guns, ...
+    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    #    "knife", ..., default "*" for all weapons
+    # geo: string
+    #    take values "urban_area", "urban_cluster", and "rural". default "*" for
+    #    all geo-components
     
     # returns_________
-    # a data.table of the number of selected race killed in each state
+    # a data.table of the number of selected race and weapon in each state
     
-    # make a single columns data table of states to join by data with missing state
+    # make a single columns data table of states to join by data with missing 
+    # state so that the return is force to include all states
     state_dt <- data.table(
         state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
                   "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
@@ -203,170 +286,62 @@ shooting_state_count <- function(choose_race = "all", weapon = "all") {
                   "VA", "WA", "WV", "WI", "WY", "DC")
     )
     
-    if (choose_race == "all"){
-        count <- read_shooting_data(weapon) %>%
-            .[race != ""] %>%          # remove unknown race
-            .[, .(state)] %>%
-            .[, .(count = .N), by = .(state)] %>%
-            .[state_dt, on = .(state)] %>%  # to add missing state
-            .[is.na(count), count := 0] %>%
-            .[order(-count)] 
-    } else {
-        count <- read_shooting_data(weapon) %>%
-            .[race != ""] %>%          # remove unknown race
-            .[, .(race, state)] %>%
-            .[, .(count = .N), by = .(state, race)] %>%
-            .[race == choose_race] %>%
-            .[, race := NULL] %>%
-            .[state_dt, on = .(state)] %>%  # to add missing state
-            .[is.na(count), count := 0] %>%
-            .[order(-count)]
-    }
-    return(count)
+    count <- read_shooting_data(choose_race, weapon, geo) %>%
+        .[race != ""] %>%          # remove unknown race if any
+        .[, .(count = .N), by = .(state)] %>%
+        .[order(-count)]
 }
 
-shooting_count_urban_rural <- function(all_or_black = "all", weapon = "all") {
-    # This function returns a data.table of police shooting of all races or of 
-    # blacks in urbanized area, urban clusters and rural area of each state.
-    
-    # args_________
-    # all_or_black: all races or black race, take values "all" or "black"
-    # weapon: string
-    #    weapon the victim was carrying when being shot, "all" for all weapons
-    #    "unarmed" for no weapone. Only works for "all", "gun", "knife" and "unarmed" 
-    # for now as having to eyeballing maps to count for each weapon.
-    
-    
-    # returns______
-    # a data.table of the count of police shooting
-    
-    # total number killed in each state
-    total_killed <- shooting_state_count(all_or_black, weapon)
-    
-    if (weapon == "all") {
-        if (all_or_black == "B") {
-            # Number of blacks killed in urban clusters (UC) and rural area.
-            # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
-            # This number is for shooting cases in 2015 and 2016.
-            # Have to recount for updated shooting database.
-            killed_UC_rural <- data.table(
-                state = c("CA", "OR", "CO", "TX", "OK", "IA", "AR", "MS", "LA", "AL", "GA",
-                          "FL", "SC", "NC", "KY", "VA", "WV", "PA", "NY", "IN", "IL", "WI"),
-                UC =    c(3, 2, 1, 2, 3, 1, 0, 3, 2, 3, 1, 2, 1, 1, 2, 2, 1, 1, 0, 1, 1, 1),
-                rural = c(0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
-            )
-        }
-        
-        if (all_or_black == "all") {
-            # total number killed (sum of all area) in each state, count from the same
-            # file. Numbers are for 2015 and 2016 shooting.
-            killed_UC_rural <- data.table(
-                state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
-                          "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
-                          "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND",
-                          "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT",
-                          "VA", "WA", "WV", "WI", "WY", "DC"),
-                UC = c(10, 2, 17, 2, 13, 3, 0, 0, 2, 10, 5, 3, 4, 2, 2, 7, 10, 5, 1, 0, 0,
-                       2, 5, 4, 3, 3, 2, 1, 2, 1, 18, 2, 9, 0, 5, 15, 3, 1, 0, 5, 2, 8,
-                       21, 3, 0, 3, 5, 4, 5, 4, 0),
-                rural = c(8, 2, 4, 4, 9, 5, 2, 0, 5, 5, 0, 3, 0, 2, 1, 2, 11, 4, 1, 0, 0, 
-                          6, 2, 5, 4, 3, 2, 1, 1, 2, 3, 4, 10, 1, 4, 12, 4, 4, 0, 7, 1, 3,
-                          16, 0, 0, 6, 4, 6, 2, 0, 0)
-            )
-        }
-    } else if(weapon == "unarmed") {
-        if (all_or_black == "B") {
-            # Number of blacks killed in urban clusters (UC) and rural area.
-            # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
-            # This number is for shooting cases in 2015 and 2016.
-            # Have to recount for updated shooting database.
-            killed_UC_rural <- data.table(
-                state = c("CA", "TX", "LA", "AR", "MS", "VA", "WI"),
-                UC =    c(2, 0, 1, 0, 1, 0, 1),
-                rural = c(0, 1, 0, 1, 0, 1, 0)
-            )
 
-        }
-        
-        if (all_or_black == "all") {
-            # total number killed (sum of all area) in each state, count from the same
-            # file. Numbers are for 2015 and 2016 shooting.
-            killed_UC_rural <- data.table(
-                state = c("WA", "CA", "AZ", "NE", "KS", "OK", "TX", "LA", "AR", "MN",
-                          "WI", "IA", "MI", "IN", "OH", "KY", "MS", "GA", "NC", "VA"),
-                UC    = c(1, 2, 1, 0, 2, 3, 1, 2, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0),
-                rural = c(0, 0, 0, 1, 0, 2, 2, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1)
-            )
-        }
-    } else if(weapon == "gun") {
-        if (all_or_black == "B") {
-            # Number of blacks killed in urban clusters (UC) and rural area.
-            # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
-            # This number is for shooting cases in 2015 and 2016.
-            # Have to recount for updated shooting database.
-            killed_UC_rural <- data.table(
-                state = c("AL", "CA", "CO", "FL", "GA", "HI", "IL", "IN", "KS", "KY",
-                          "LA", "MS", "OK", "OR", "SC", "TX", "VA"),
-                UC =    c(3, 1, 1, 1, 1, 1, 1, 0, 1, 1,   1, 1, 3, 0, 1, 0, 1),
-                rural = c(1, 0, 0, 1, 1, 0, 0, 1, 0, 1,   1, 0, 1, 1, 2, 1, 1)
-            )
-            
-        }
-        
-        if (all_or_black == "all") {
-            # total number killed (sum of all area) in each state, count from the same
-            # file. Numbers are for 2015 and 2016 shooting.
-            killed_UC_rural <- data.table(
-                state = c("WA", "ID", "MT", "OR", "CA", "NV", "UT", "CO", "AZ", "NM",
-                          "TX", "AL", "AR", "FL", "GA", "IL", "IN", "IA", "KS", "AK",
-                          "HI", "KY", "LA", "ME", "MI", "MN", "MS", "MO", "NE", "NH",
-                          "NJ", "NY", "NC", "ND", "OH", "OK", "PA", "SC", "SD", "TN", 
-                          "VA", "WV", "WI"),
-                UC    = c(2, 3, 2, 2, 7, 1, 2, 3, 7, 13,
-                          10, 8, 2, 1, 9, 4, 2, 1, 3, 0, 
-                          3, 8, 1, 0, 1, 2, 2, 3, 0, 1,
-                          1, 1, 6, 0, 3, 1, 0, 3, 2, 5,
-                          2, 2, 3),
-                rural = c(1, 3, 0, 3, 6, 1, 0, 3, 3, 3,
-                          8, 4, 2, 3, 2, 2, 1, 1, 3, 1,
-                          0, 8, 3, 1, 3, 2, 3, 2, 1, 0, 
-                          0, 3, 6, 1, 1, 9, 2, 4, 1, 3,
-                          5, 3, 2)
-            )
-        }
-    } else if(weapon == "knife") {
-        if (all_or_black == "B") {
-            # Number of blacks killed in urban clusters (UC) and rural area.
-            # The numbers are counted from file "B0_city_shooting_in_cities_on_map.R"
-            # This number is for shooting cases in 2015 and 2016.
-            # Have to recount for updated shooting database.
-            killed_UC_rural <- data.table(       # empty 
-                state = c("DC"),
-                UC =    c(0),
-                rural = c(0)
-            )
-            
-        }
-        
-        if (all_or_black == "all") {
-            # total number killed (sum of all area) in each state, count from the same
-            # file. Numbers are for 2015 and 2016 shooting.
-            killed_UC_rural <- data.table(
-                state = c("AK", "AZ", "CA", "FL", "GA", "HI", "IL", "KS", "MN", 
-                          "MT", "NE", "NH", "NM", "NY", "NC", "OK", "SC", "TN", 
-                          "TX", "VA", "WA", "WI", "WY"),
-                UC    = c(1, 3, 3, 1, 0, 1, 1, 1, 1, 1, 2, 0, 1, 1, 1, 1, 0, 2, 4, 1, 0, 1, 2),
-                rural = c(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0)
-            )
-        }
-    } 
+count_shooting_urban_rural <- function(choose_race = "*", weapon = "*") {
+    # This function returns a data.table of police shooting cases with victims of 
+    # selected race and weapon in urbanized area, urban clusters and rural area 
+    # of each state.
     
-    total_killed <- killed_UC_rural[total_killed, on = .(state)] %>%
+    # args_______
+    # choose_race: string
+    #    race of the victim, takes values of "W", "B", "H", "A", ...
+    #    default "*" is for all races
+    # weapon: string
+    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    #    "knife", ..., default "*" for all weapons
+
+    # returns______
+    # a data.table of the count of police shooting in each geo-component
+    
+    # make a single columns data table of states to join by data with missing 
+    # state so that the return is force to include all states
+    state_dt <- data.table(
+        state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+                  "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+                  "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND",
+                  "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT",
+                  "VA", "WA", "WV", "WI", "WY", "DC")
+    )
+    
+    # count in each geo area
+    count <- read_shooting_data(choose_race, weapon) %>%
+        .[race != ""] %>%   # remove unknown race
+        # count in all geo location
+        .[, .N, by = .(state, urban_rural)]
+    
+    # seperate to each geo-component
+    UA <- count[urban_rural == "urban_area", .(state, UA = N)] 
+    UC <- count[urban_rural == "urban_cluster", .(state, UC = N)]
+    rural <- count[urban_rural == "rural", .(state, rural = N)]
+    
+    # combine them into a large data.table 
+    combined <- rural[UC, on = .(state)] %>%
+        .[UA, on = .(state)] %>%
+        # force to include all states and set NA to 0
+        .[state_dt, on = .(state)] %>%
+        .[is.na(UA), UA := 0] %>%
         .[is.na(UC), UC := 0] %>%
         .[is.na(rural), rural := 0] %>%
-        .[, UA := count - UC - rural] %>%
+        # add total urban and total geo
         .[, urban := UA + UC] %>%
-        setnames(., "count", "all_geo")
+        .[, all_geo := UA + UC + rural] %>%
+        .[order(-all_geo)]
 }
 
 # prepare voting data =========================================================

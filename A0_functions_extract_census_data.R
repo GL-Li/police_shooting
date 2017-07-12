@@ -151,7 +151,7 @@ get_total_geo_population <- function(geo_comp = "all_geo") {
     #      area, "UC" for urban cluster, and "rural"
     
     # return_________
-    # data.table of total population in 50 states and DC
+    # data.table of total population in 50 states and DC in selected geo_comp
     
     geo_code <- c("00", "01", "04", "28", "43")
     names(geo_code) <- c("all_geo", "urban", "UA", "UC", "rural")
@@ -199,18 +199,3 @@ get_total_geo_population <- function(geo_comp = "all_geo") {
     }
     rbindlist(total_list)
 }
-
-
-
-# write data to csv ===========================================================
-# all_state <- c("DC", "MS", "LA", "GA", "MD", "SC", "AL", "NC", 
-#                "DE", "VA", "TN", "FL", "AR", "NY", "IL", "NJ", 
-#                "MI", "OH", "TX", "MO", "PA", "CT", "IN", "NV", 
-#                "KY", "MA", "OK", "RI", "CA", "KS", "WI", "MN", 
-#                "NE", "CO", "AK", "AZ", "WA", "WV", "HI", "NM", 
-#                "IA", "OR", "WY", "UT", "NH", "SD", "ND", "ME",
-#                "ID", "VT", "MT")
-# 
-# full_geo_race <- get_full_geo_race(all_state)
-# write.csv(full_geo_race, file = "extracted_csv/full_geo_race_all_state.csv", 
-#           row.names = FALSE)
