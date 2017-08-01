@@ -201,7 +201,7 @@ identify_area <- function(latitude, longitude, state) {
 
 # prepare shooting data =======================================================
 
-read_shooting_data <- function(choose_race = "*", weapon = "*", geo = "*") {
+read_shooting_data <- function(choose_race = "*", weapon = "*", geo_comp = "*") {
     # read shooting data of selected race, weapon, and geo-component
     
     # args_______
@@ -211,7 +211,7 @@ read_shooting_data <- function(choose_race = "*", weapon = "*", geo = "*") {
     # weapon: string
     #    weapon the victim was carrying when being shot, "unarmed", "gun", 
     #    "knife", ..., default "*" for all weapons
-    # geo: string
+    # geo_comp: string
     #    take values "urban_area", "urban_cluster", and "rural". default "*" for
     #    all geo-components
     
@@ -222,11 +222,11 @@ read_shooting_data <- function(choose_race = "*", weapon = "*", geo = "*") {
         # %like% is so cool, usage: vector %like% pattern
         .[race %like% choose_race] %>% 
         .[armed %like% weapon] %>%
-        .[urban_rural %like% geo]
+        .[urban_rural %like% geo_comp]
 }
 
 
-count_shooting_city <- function(choose_race = "*", weapon = "*", geo = "*") {
+count_shooting_city <- function(choose_race = "*", weapon = "*", geo_comp = "*") {
     # This function returns the number of selected race and weapon in each city 
     # of selected geo-component, of known race. Unknow race cases are removed.
     
@@ -237,7 +237,7 @@ count_shooting_city <- function(choose_race = "*", weapon = "*", geo = "*") {
     # weapon: string
     #    weapon the victim was carrying when being shot, "unarmed", "gun", 
     #    "knife", ..., default "*" for all weapons
-    # geo: string
+    # geo_comp: string
     #    take values "urban_area", "urban_cluster", and "rural". default "*" for
     #    all geo-components
     
@@ -245,7 +245,7 @@ count_shooting_city <- function(choose_race = "*", weapon = "*", geo = "*") {
     # a data.table of the number of race killed in each city
     
     # remove shooting of unknown race
-    shooting <- read_shooting_data(choose_race, weapon, geo) %>%
+    shooting <- read_shooting_data(choose_race, weapon, geo_comp) %>%
         .[race != ""]
     
     # count shooting death in each city of the selected race
@@ -255,10 +255,15 @@ count_shooting_city <- function(choose_race = "*", weapon = "*", geo = "*") {
     # add lon and lat to city_count
     city_coord <- city_lon_lat()
     city_count <- city_coord[city_count, on = .(city_state)]
+    
+    # add geo-component of the city
+    geo_city <- shooting[, .(city_state, urban_rural, state)] %>%
+        unique()
+    city_count <- geo_city[city_count, on = .(city_state)]
 }
 
 
-count_shooting_state <- function(choose_race = "*", weapon = "*", geo = "*") {
+count_shooting_state <- function(choose_race = "*", weapon = "*", geo_comp = "*") {
     # This function calculate number of cases of police fatal shooting in each 
     # state of selected race, weapon and geo-component
     
@@ -269,7 +274,7 @@ count_shooting_state <- function(choose_race = "*", weapon = "*", geo = "*") {
     # weapon: string
     #    weapon the victim was carrying when being shot, "unarmed", "gun", 
     #    "knife", ..., default "*" for all weapons
-    # geo: string
+    # geo_comp: string
     #    take values "urban_area", "urban_cluster", and "rural". default "*" for
     #    all geo-components
     
@@ -286,7 +291,7 @@ count_shooting_state <- function(choose_race = "*", weapon = "*", geo = "*") {
                   "VA", "WA", "WV", "WI", "WY", "DC")
     )
     
-    count <- read_shooting_data(choose_race, weapon, geo) %>%
+    count <- read_shooting_data(choose_race, weapon, geo_comp) %>%
         .[race != ""] %>%          # remove unknown race if any
         .[, .(count = .N), by = .(state)] %>%
         .[order(-count)]
@@ -330,15 +335,17 @@ count_shooting_urban_rural <- function(choose_race = "*", weapon = "*") {
     UC <- count[urban_rural == "urban_cluster", .(state, UC = N)]
     rural <- count[urban_rural == "rural", .(state, rural = N)]
     
-    # combine them into a large data.table 
-    combined <- rural[UC, on = .(state)] %>%
-        .[UA, on = .(state)] %>%
-        # force to include all states and set NA to 0
-        .[state_dt, on = .(state)] %>%
+    # combine them into a large data.table , make sure to include all states
+    # from very beginning even there is no count by forcing to include all states
+    # with a join
+    combined <- rural[state_dt, on = .(state)] %>%  
+        UC[., on = .(state)] %>%
+        UA[., on = .(state)] %>%
+        # set NA to 0
         .[is.na(UA), UA := 0] %>%
         .[is.na(UC), UC := 0] %>%
         .[is.na(rural), rural := 0] %>%
-        # add total urban and total geo
+        # add total urban, rural and small urban, and total geo
         .[, urban := UA + UC] %>%
         .[, all_geo := UA + UC + rural] %>%
         .[order(-all_geo)]

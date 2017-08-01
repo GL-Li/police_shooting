@@ -16,11 +16,12 @@ source("A0_functions_extract_census_data.R")
 # and rural area in cyan. The location of shooting is marked with a red cycle
 # and the cycle area represents number of shooting. 
 plot_shooting_on_state_map <- function(state, center = NULL, zoom = 7,
-                                       choose_race = "*", weapon = "*"){
+                                       choose_race = "*", weapon = "*", 
+                                       max_size=20){
     # plot location and number of shooting in the map of a state
     
     # args_______
-    # state : string
+    # state: string
     #    abbrevation of a state, such as "MA", "RI"
     # center : string
     #    center location of a state. Have to specify if the automatic center is 
@@ -35,6 +36,7 @@ plot_shooting_on_state_map <- function(state, center = NULL, zoom = 7,
     # returns______
     #     plot and save a figure, no return
     
+    # only include cities in selected state
     city_count <- count_shooting_city(choose_race, weapon)
     geo <- get_full_geo_race(state, read_race = FALSE)
     if (is.null(center)) {
@@ -52,12 +54,17 @@ plot_shooting_on_state_map <- function(state, center = NULL, zoom = 7,
                          cap_words_1st_letter(convert_state_names(state, "abbr", "low")))
     save_as <- paste0("figures_temp/block_level_", race, "_killed_", state, "_map.png")
     
-    plot_urban_rural_on_map(center, geo, zoom) +
+    plot_urban_rural_on_map(center, geo, zoom, max_size = max_size) +
         geom_point(data = city_count, aes(lon, lat, size = count * 100000), 
                    alpha = 1, color = "red", shape = 1) + 
-        theme(legend.text = element_text(size = 11)) +
+        # mark rural and small urban shooting
+        geom_point(data = city_count[urban_rural %in% c("urban_cluster", "rural")],
+                   aes(lon, lat), shape = 4) +
+        theme(legend.text = element_text(size = 11),
+              plot.caption = element_text(color = "grey50", family = "monospace")) +
         labs(title = plot_title,
-             subtitle = "Location and number of shootings are marked by open red circles")
+             subtitle = "Location and number of shootings are marked by open red circles.\nBlack crosses mark shootings in rural or small urban areas.",
+             caption = "Soruces: Washington Post, Census 2010, and Google Map")
     ggsave(filename = save_as , width = 8, height = 8)
     print(paste("Figure saved:", save_as))
 }
@@ -113,35 +120,35 @@ plot_shooting_US_map <- function(choose_race = "*", weapon = "*"){
 
 
 
-# US west
-block <- fread("~/dropbox_datasets/US_2010_census/extracted_csv/full_geo_race_block_level")
-
-us_map_west <- get_map(location = "Moore, UT", zoom = 5)
-ggmap(us_map_west) +
-    geom_point(data = block[!is.na(rural)], aes(lon, lat, size = rural),
-               alpha = 0.7, color = "cyan", stroke = 0) +
-    geom_point(data = block[!is.na(urban_cluster)], aes(lon, lat, size = urban_cluster),
-               alpha = 0.7, color = "orange", stroke = 0) +  # stroke = 0 to remove circle border
-    geom_point(data = block[!is.na(urban_area)], aes(lon, lat, size = urban_area),
-               alpha = 0.7, color = "#DE90F5", stroke = 0) +
-    geom_point(data = city_count, aes(lon, lat, size = count * 3000), 
-               color = "red", shape = 1) +
-    scale_size_area(max_size = 5)
-ggsave(filename = "figures/BG_level_all_killed_us_west_map.png", width = 12, height = 12)
-
-# US east
-us_map_east <- get_map(location = "Sevierville, TN", zoom = 5)
-ggmap(us_map_east) +
-    geom_point(data = block[!is.na(rural)], aes(lon, lat, size = rural),
-               alpha = 0.7, color = "cyan", stroke = 0) +
-    geom_point(data = block[!is.na(urban_cluster)], aes(lon, lat, size = urban_cluster),
-               alpha = 0.7, color = "orange", stroke = 0) +  # stroke = 0 to remove circle border
-    geom_point(data = block[!is.na(urban_area)], aes(lon, lat, size = urban_area),
-               alpha = 0.7, color = "#DE90F5", stroke = 0) +
-    geom_point(data = city_count, aes(lon, lat, size = count * 3000), 
-               color = "red", shape = 1) +
-    scale_size_area(max_size = 5)
-ggsave(filename = "figures/BG_level_all_killed_us_east_map.png", width = 12, height = 12)
+# # US west
+# block <- fread("~/dropbox_datasets/US_2010_census/extracted_csv/full_geo_race_block_level")
+# 
+# us_map_west <- get_map(location = "Moore, UT", zoom = 5)
+# ggmap(us_map_west) +
+#     geom_point(data = block[!is.na(rural)], aes(lon, lat, size = rural),
+#                alpha = 0.7, color = "cyan", stroke = 0) +
+#     geom_point(data = block[!is.na(urban_cluster)], aes(lon, lat, size = urban_cluster),
+#                alpha = 0.7, color = "orange", stroke = 0) +  # stroke = 0 to remove circle border
+#     geom_point(data = block[!is.na(urban_area)], aes(lon, lat, size = urban_area),
+#                alpha = 0.7, color = "#DE90F5", stroke = 0) +
+#     geom_point(data = city_count, aes(lon, lat, size = count * 3000), 
+#                color = "red", shape = 1) +
+#     scale_size_area(max_size = 5)
+# ggsave(filename = "figures/BG_level_all_killed_us_west_map.png", width = 12, height = 12)
+# 
+# # US east
+# us_map_east <- get_map(location = "Sevierville, TN", zoom = 5)
+# ggmap(us_map_east) +
+#     geom_point(data = block[!is.na(rural)], aes(lon, lat, size = rural),
+#                alpha = 0.7, color = "cyan", stroke = 0) +
+#     geom_point(data = block[!is.na(urban_cluster)], aes(lon, lat, size = urban_cluster),
+#                alpha = 0.7, color = "orange", stroke = 0) +  # stroke = 0 to remove circle border
+#     geom_point(data = block[!is.na(urban_area)], aes(lon, lat, size = urban_area),
+#                alpha = 0.7, color = "#DE90F5", stroke = 0) +
+#     geom_point(data = city_count, aes(lon, lat, size = count * 3000), 
+#                color = "red", shape = 1) +
+#     scale_size_area(max_size = 5)
+# ggsave(filename = "figures/BG_level_all_killed_us_east_map.png", width = 12, height = 12)
 
 
 
