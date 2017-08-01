@@ -1,0 +1,193 @@
+
+<!doctype html>
+<html>
+<head>
+    <title>create html table</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+</head>
+
+<body>
+
+    <style>
+        table {border-collapse: collapse; width: 100%; font-family: monospace; color: gray}
+        td {font-size: 14px; border-bottom: lightgray solid thin}
+        .sources {font-size: 12px}
+        .red {color:red}
+        .blue { color:blue}
+        .cat {text-align: left}
+    </style>
+
+
+<!--table: unarmed civillians killed by police-->
+<table style="width:650px">
+    <caption>
+        <p align="left"; style="font-family:Arial; color:black"><strong>Police officers targeted unarmed black people more in <span style="color:blue">blue states</span> than in <span style="color:red">red states</span></strong></p>
+    </caption>
+    <caption align="bottom">
+        <p class="sources"; align="right">Sources: Washigton Post and Census 2010</p>
+    </caption>
+
+    <tr align="center">
+        <td style="border-bottom:0px"></td>
+        <td style="border-bottom:0px"></td>
+        <td colspan="2" style="color:grey">fatal police shooting in January 2015 - June 2017</td>
+    </tr>
+
+
+    <tr style="border-bottom:2px gray solid; color:gray"; align="center">
+<!--        <th></th>-->
+        <th></th>
+        <th></th>
+        <th>killed per million population</th>
+        <th>disparity ratio</th>
+    </tr>
+
+    <tr class="red"; align="center">
+        <td rowspan="4" style="color:black", align="right">unarmed</td>
+<!--        <td rowspan="2"; align="right">red states</td>-->
+        <td align="right">black</td>
+        <td>1.48</td>
+        <td rowspan="2">3.02</td>
+    </tr>
+    <tr class="red"; align="center">
+        <td align="right">non-black</td>
+        <td>0.49</td>
+    </tr>
+
+    <tr class="blue"; align="center">
+<!--        <td rowspan="2", align="right">blue states</td>-->
+        <td align="right">black</td>
+        <td>1.77</td>
+        <td rowspan="2">4.66</td>
+    </tr>
+    <tr class="blue"; align="center">
+        <td align="right">non-black</td>
+        <td>0.38</td>
+    </tr>
+
+        <tr class="red"; align="center">
+        <td rowspan="4" style="color:black", align="right">armed</td>
+<!--        <td rowspan="2"; align="right">red states</td>-->
+        <td align="right">black</td>
+        <td>15.39</td>
+        <td rowspan="2">1.90</td>
+    </tr>
+    <tr class="red"; align="center">
+        <td align="right">non-black</td>
+        <td>8.12</td>
+    </tr>
+
+    <tr class="blue"; align="center">
+<!--        <td rowspan="2", align="right">blue states</td>-->
+        <td align="right">black</td>
+        <td>14.59</td>
+        <td rowspan="2">2.88</td>
+    </tr>
+    <tr class="blue"; align="center">
+        <td align="right">non-black</td>
+        <td>5.07</td>
+    </tr>
+
+</table>
+
+
+<!--    -->
+<!--    -->
+<!--languages in police union contracts that protect police officer    -->
+<table style="width:750px">
+    <caption>
+        <p align="left"; style="font-family:Arial; color:black"><strong><span style="color:blue">Blue states</span> and <span style="color:red">red states</span> have the same level of protection to police officers in contracts</strong></p>
+    </caption>
+    <caption align="bottom">
+        <p class="sources"; align="right">Source: Campaign Zero</p>
+    </caption>
+
+    <tr align="center">
+        <td style="border-bottom:0px"></td>
+        <td colspan="2" style="color:grey">average number of languages found for each category</td>
+    </tr>
+
+    <tr style="border-bottom:2px gray solid; color:gray"; align="center">
+        <th class="cat">category</th>
+        <th class="blue">blue states</th>
+        <th class="red">red states</th>
+    </tr>
+
+    <tr align="center">
+        <td class="cat">Disqualifies complaints</td>
+        <td class="blue">1.36</td>
+        <td class="red">1.36</td>
+    </tr>
+    <tr align="center">
+        <td class="cat">Erases misconduct records</td>
+        <td class="blue" style="background:#F6F4F3">1.71</td>
+        <td class="red" style="background:#F6F4F3">1.47</td>
+    </tr>
+    <tr align="center">
+        <td class="cat">Gives officers unfair access to info</td>
+        <td class="blue">1.76</td>
+        <td class="red">1.75</td>
+    </tr>
+    <tr align="center">
+        <td class="cat">Limits oversight/discipline</td>
+        <td class="blue">2.15</td>
+        <td class="red">2.17</td>
+    </tr>
+    <tr align="center">
+        <td class="cat">Requires city pay for misconduct</td>
+        <td class="blue" style="background:#F6F4F3">1.69</td>
+        <td class="red" style="background:#F6F4F3">1.50</td>
+    </tr>
+    <tr align="center">
+        <td class="cat">Restricts/delays interrogations</td>
+        <td class="blue">2.52</td>
+        <td class="red">2.43</td>
+    </tr>
+</table>
+
+
+<!-- black / total killed in each geo-components -->
+<table style="width:700px">
+    <caption>
+        <p align="left"; style="font-family:Arial; color:black"><strong>Number of black / non-black people fatally shot by police in <span style="color:blue">blue states</span> and <span style="color:red">red states</span></strong></p>
+    </caption>
+    <caption align="bottom">
+        <p class="sources"; align="right">Sources: Washigton Post</p>
+    </caption>
+
+    <tr align="center">
+        <td colspan="4" style="color:grey">fatal police shooting in January 2015 - June 2017</td>
+    </tr>
+
+
+    <tr style="border-bottom:2px gray solid; color:gray"; align="center">
+<!--        <th></th>-->
+        <th>total</th>
+        <th>large urban area</th>
+        <th>small urban area</th>
+        <th>rural area</th>
+    </tr>
+
+    <tr class="red"; align="center">
+        <td>250 / 781</td>
+        <td>205 / 470</td>
+        <td>24 / 171</td>
+        <td>21 / 140</td>
+    </tr>
+
+    <tr class="blue"; align="center">
+      <td>358 / 920</td>
+      <td>333 / 724</td>
+      <td>12 / 97</td>
+      <td>13 / 99</td>
+    </tr>
+</table>
+
+
+
+</body>
+</html>

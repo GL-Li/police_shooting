@@ -1,5 +1,5 @@
 # This file define functions to extract 2010 census data and save them to csv files.
-# Last reviewed 4/29/2017
+# Last reviewed 7/12/2017
 
 # The 2010 census data, with urban and rural update, were downloaded from
 # http://www2.census.gov/census_2010/04-Summary_File_1/Urban_Rural_Update/ 
@@ -16,9 +16,8 @@ library(ggmap)
 get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
                               read_geo = TRUE, read_race = TRUE) {
     # This function get the full census data of urban and rural population, and 
-    # races. Keep all rows in the summary data file. The return just add columns
-    # of races to that of get_full_geo(). Keep it as a seperate function.
-    
+    # races of selected states. Keep all rows in the summary data file. 
+
     # args___________
     # state_abbr_vector : string vector
     #     vector of state abbriviations such as c("MA", "RI")
@@ -30,7 +29,7 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
     #     weather to read race population
     
     # return_________
-    # a data.table of population in the state vector
+    # a data.table of population in each states in the vector
     
     population_list <- list()
     for (state_abbr in state_abbr_vector) {
@@ -88,10 +87,12 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
 }
 
 
-plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7) {
+plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7, max_size = 20) {
     # This function plot urbanized area, urban clusters, and rural area at block
     # level of a state on google map
     # Require internet connection to download google map
+    
+    # This function is served as the background of police shooting location plot
     
     # args_______
     # state_abbr: abbreviation of a state, such as "MA" and "FL"
@@ -100,10 +101,14 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7) {
     #     function runs a long time. So get it done outside of the 
     #     plot_urban_rural_on_map function.
     # zoom: zoom when using get_map() to download map data. Adjust accordingly.
+    # max_size: integer
+    #     maximun size of circle for number of shooting. adjust according to 
+    #     visual effect for each state
     
     # returns_____
-    # no return but make a plot
+    # a ggplot
     
+    # block level census data
     block <- state_full_geo %>%
         .[level_code == "100"] %>%     # level code for block is "100" instead of 101
         .[, .(lat, lon, urban_area, urban_cluster, rural)] 
@@ -120,21 +125,20 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7) {
         geom_point(data = block[!is.na(urban_area)], 
                    aes(lon, lat, size = urban_area, color = "large urban area"),
                    alpha = 0.3) +    # darker than pink
-        scale_color_manual("",
-                           breaks = c("large urban area",  # order keys in legend
+        scale_color_manual(breaks = c("large urban area",  # order keys in legend
                                       "small urban area",
                                       "rural area"),
                            values = c("large urban area" = "#DE90F5",
                                       "small urban area" = "orange",
-                                      "rural area" = "cyan")) +
+                                      "rural area" = "cyan"),
+                           guide = guide_legend(override.aes = list(size=5))) +
+        scale_size_area(max_size = max_size, guide = FALSE) + 
+        labs(color = NULL) +
         theme(legend.position = "top",
               legend.text = element_text(size = 20),
               axis.title = element_blank(),
               axis.text = element_blank(),
-              axis.ticks = element_blank()) +
-        scale_size_area(max_size = 20) + 
-        # override and fix legend key sizes
-        guides(size = FALSE, color = guide_legend(override.aes = list(size=5)))
+              axis.ticks = element_blank())
 }
 
 
@@ -199,3 +203,4 @@ get_total_geo_population <- function(geo_comp = "all_geo") {
     }
     rbindlist(total_list)
 }
+
