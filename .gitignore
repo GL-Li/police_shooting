@@ -1,0 +1,31 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# folders
+figures_temp
+old
+RData
+reading_materials
+backup
+
+# files
+readme_backup.md
+temp.*
+leftover_writings.txt
+*.lyx*
+
+# copied from untracked files
+figures/block_level_all_races_killed_GA_map.png
+figures/disparity_state_all_area.png
+figures/disparity_state_large_urban_area.png
+figures/disparity_vote_all_geo.png
+figures/geo_disparity_unarmed.png
+figures/union_contract_protect_police.png
+html_tables.html
+tmp.png
+urbanratio.png
+01_shooting_in_cities.R
+02_shooting_in_blue_and_red_states.R
+README.html
