@@ -1,5 +1,5 @@
 # This file define functions to extract 2010 census data and save them to csv files.
-# Last reviewed 7/12/2017
+# Last reviewed 8/4/2017
 
 # The 2010 census data, with urban and rural update, were downloaded from
 # http://www2.census.gov/census_2010/04-Summary_File_1/Urban_Rural_Update/ 
@@ -15,27 +15,32 @@ library(ggmap)
 # define functions ============================================================
 get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
                               read_geo = TRUE, read_race = TRUE) {
-    # This function get the full census data of urban and rural population, and 
-    # races of selected states. Keep all rows in the summary data file. 
-
-    # args___________
-    # state_abbr_vector : string vector
-    #     vector of state abbriviations such as c("MA", "RI")
-    # zero_to_NA : logical
-    #     option to convert numbers zero to NA to reduce the plot point
-    # read_geo : logical
-    #     weather to read population in geo-component, such as urban and rural
-    # read_race : logical
-    #     weather to read race population
-    
-    # return_________
-    # a data.table of population in each states in the vector
+    ## This function get the full census data of urban and rural population, and 
+    ## races of selected states. Keep all rows in the original census summary 
+    ## data file. 
+    ##
+    ## args___________
+    ## state_abbr_vector : string vector
+    ##     vector of state abbriviations such as c("MA", "RI")
+    ## zero_to_NA : logical
+    ##     option to convert numbers zero to NA to reduce the plot point
+    ## read_geo : logical
+    ##     weather to read population in geo-component, such as urban and rural
+    ## read_race : logical
+    ##     weather to read race population
+    ##
+    ## return_________
+    ## a data.table of population which keeps all rows of census data of selected
+    ## states
+    ##
+    ## example:
+    ## get_full_geo_race(c("RI", "DC"))
     
     population_list <- list()
     for (state_abbr in state_abbr_vector) {
         print(state_abbr)
-        # setup file path, change according to the location of downloaded 2010
-        # census data
+        # setup file path to downloaded census data. Modified it with your local
+        # path
         folder <- paste0("~/dropbox_datasets/US_2010_census/", state_abbr, "/")
         geofile <- paste0(folder, tolower(state_abbr), "geo2010.ur1")
         f02file <- paste0(folder, tolower(state_abbr), "000022010.ur1")
@@ -44,17 +49,20 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
         # read data
         print("read geofile")
         geo_code <- fread(geofile, sep = "\n", header = FALSE)
-        # replace unicodes in geofile of these state 
+        # replace unicodes of Spainish letters in geofile of these state with a
+        # "9" (can be any other readable letters)
         if (state_abbr %in% c("US", "TX", "NM", "CA", "AZ", "CO")) {
             geo_code[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
         }
         
         # extract data
-        population <- geo_code[, .(state = state_abbr,
-                              level_code = substr(V1, 9, 11),
-                              geo_component = substr(V1, 12, 13),
-                              lat = as.numeric(substr(V1, 337, 347)),
-                              lon = as.numeric(substr(V1, 348, 359)))] 
+        population <- geo_code[, 
+                               .(state = state_abbr,
+                                 level_code = substr(V1, 9, 11),
+                                 geo_component = substr(V1, 12, 13),
+                                 lat = as.numeric(substr(V1, 337, 347)),
+                                 lon = as.numeric(substr(V1, 348, 359)))
+                               ] 
         if (read_geo){
             print("read f02file")
             f02 <- fread(f02file, header = FALSE)
@@ -76,8 +84,9 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
         if (zero_to_NA) {
             # the method is copied from Edit2 of the answer by Matt Dowle at
             # http://stackoverflow.com/questions/7235657/fastest-way-to-replace-nas-in-a-large-data-table
-            for (i in seq_along(population)) {
-                set(population, i = which(population[[i]] == 0), j = i, value = NA)
+            for (k in seq_along(population)) {
+                # change all rows of value 0 in k^th column to value NA
+                set(population, i = which(population[[k]] == 0), j = k, value = NA)
             }
         }
         
@@ -88,25 +97,29 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
 
 
 plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7, max_size = 20) {
-    # This function plot urbanized area, urban clusters, and rural area at block
-    # level of a state on google map
-    # Require internet connection to download google map
-    
-    # This function is served as the background of police shooting location plot
-    
-    # args_______
-    # state_abbr: abbreviation of a state, such as "MA" and "FL"
-    # state_full_geo: the data.table obtained from function 
-    #     get_full_geo_race(read_race = FALSE). This
-    #     function runs a long time. So get it done outside of the 
-    #     plot_urban_rural_on_map function.
-    # zoom: zoom when using get_map() to download map data. Adjust accordingly.
-    # max_size: integer
-    #     maximun size of circle for number of shooting. adjust according to 
-    #     visual effect for each state
-    
-    # returns_____
-    # a ggplot
+    ## This function plot urbanized area, urban clusters, and rural area at block
+    ## level of a state on google map
+    ## Require internet connection to download google map
+    ##
+    ## This function is served as the background of police shooting location plot
+    ##
+    ## args_______
+    ## state_abbr: abbreviation of a state, such as "MA" and "FL"
+    ## state_full_geo: the data.table obtained from function 
+    ##     get_full_geo_race(read_race = FALSE). This function runs for a long
+    ##     time. Get it done outside of the plot_urban_rural_on_map function
+    ##     so that we can easily adgust zoom and max_size for better plot.
+    ## zoom: zoom when using get_map() to download map data. Adjust accordingly.
+    ## max_size: integer
+    ##     maximun size of circle for number of shooting. adjust according to 
+    ##     visual effect for each state
+    ##
+    ## returns_____
+    ## a ggplot that allows more layers to be added
+    ##
+    ## example______
+    ## RI_full_geo <- get_full_geo_race("RI", read_race = FALSE)
+    ## plot_urban_rural_on_map("RI", RI_full_geo, zoom = 9,  max_size = 3)
     
     # block level census data
     block <- state_full_geo %>%
@@ -142,23 +155,23 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7, max_si
 }
 
 
-get_total_geo_population <- function(geo_comp = "all_geo") {
-    # This function extract the total population in specified geocomponent such as
-    # all geo, urban, urbanized area, urban cluster, and rural area.
-    # The total population in the geocomponent is further grouped into population 
-    # in urban/rural area if applicable, as well as population of different races.
-    
-    # takes less than 1 sec to run
-    
-    # args___________
-    # geo_comp: geocomponent taking values from "all_geo", "urban", "UA" for urbanized
-    #      area, "UC" for urban cluster, and "rural"
-    
-    # return_________
-    # data.table of total population in 50 states and DC in selected geo_comp
+get_total_geo_population <- function(geo_comp = "*") {
+    ## This function extract the total population in specified geocomponent such as
+    ## all geo, urban, urbanized area, urban cluster, and rural area.
+    ## The total population in the geocomponent is further grouped into population 
+    ## in urban/rural area if applicable, as well as population of different races.
+    ##
+    ## takes less than 1 sec to run
+    ##
+    ## args___________
+    ## geo_comp: geocomponent taking values from "*" for all_geo, "urban", 
+    ##      "UA" for urbanized area, "UC" for urban cluster, and "rural"
+    ##
+    ## return_________
+    ## data.table of total population in 50 states and DC in selected geo_comp
     
     geo_code <- c("00", "01", "04", "28", "43")
-    names(geo_code) <- c("all_geo", "urban", "UA", "UC", "rural")
+    names(geo_code) <- c("*", "urban", "UA", "UC", "rural")
     
     state_abbr_vector <- c("DC", "MS", "LA", "GA", "MD", "SC", "AL", "NC",
                            "DE", "VA", "TN", "FL", "AR", "NY", "IL", "NJ",
@@ -170,7 +183,6 @@ get_total_geo_population <- function(geo_comp = "all_geo") {
 
     total_list <- list()
     for (state_abbr in state_abbr_vector) {
-        # print(state_abbr)
         # setup file path
         folder <- paste0("~/dropbox_datasets/US_2010_census/", state_abbr, "/")
         geofile <- paste0(folder, tolower(state_abbr), "geo2010.ur1")
