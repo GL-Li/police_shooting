@@ -1,5 +1,5 @@
 # This file defines functions for preparing Washington Post fatal police shooting data.
-# Last reviewed 7/9/2017
+# Last reviewed 8/4/2017
 
 
 library(data.table)
@@ -11,32 +11,38 @@ library(stringr)
 # load function to extract census data
 source("A0_functions_extract_census_data.R")
 
-# define geological functions =================================================
+# define helper and geological functions =================================================
 cap_words_1st_letter <- function(words) {
-    # This function capitalizes first letter of each words, for example, 
-    # "rhode island" to "Rhode Island"
-    
-    # modified from http://stackoverflow.com/questions/6364783/capitalize-the-first-letter-of-both-words-in-a-two-word-string
-    
-    # args______
-    # words : string vector
-    
-    # returns______
-    # Same words string with capitalized first letter of each words
+    ## This function capitalizes first letter of each words and keep all other  
+    ## letters lower, for example, "rHode isLand" to "Rhode Island"
+    ##
+    ## modified from http://stackoverflow.com/questions/6364783/capitalize-the-first-letter-of-both-words-in-a-two-word-string
+    ##
+    ## args______
+    ## words : string vector
+    ##
+    ## returns______
+    ## Same words string with capitalized first letter of each words
+    ##
+    ## example______
+    ## cap_words_1st_letter("rHode isLand")
 
     gsub("(^|[[:space:]])([[:alpha:]])", "\\1\\U\\2", tolower(words), perl=TRUE)
 }
 
-convert_state_names <- function(state_names, from, to) {
-    # This function converts state names between lower case and abbriavation
-    
-    # args_______________
-    # state_names: vector of state names in lower case or abbrevation
-    # from: format of names to be converted, take value "abbr" or "low"
-    # to: format of converted names, take value "low" or "abbr"
-    
-    # return____________
-    # a vector of converted state names
+convert_state_names <- function(state_names) {
+    ## This function converts state names between lower case and abbriavation
+    ##
+    ## args_______________
+    ## state_names: string
+    ##    vector of state names in standard name or abbrevation, for example,
+    ##    "New York", "new york", "NY"
+    ##
+    ## return____________
+    ## a named vector of converted state names
+    ##
+    ## example__________
+    ## convert_state_names(c("RI", "MA"))
     
     abbr <- c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", 
               "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
@@ -50,9 +56,22 @@ convert_state_names <- function(state_names, from, to) {
              "michigan", "minnesota", "mississippi", "missouri", "montana", 
              "nebraska", "nevada", "new hampshire", "new jersey", "new mexico", 
              "new york", "north carolina", "north dakota", "ohio", "oklahoma", 
-             "oregon", "pennsylvania", "rhode island", "south carolina", "south dakota", 
-             "tennessee", "texas", "utah", "vermont", "virginia", "washington", 
-             "west virginia", "wisconsin", "wyoming")
+             "oregon", "pennsylvania", "rhode island", "south carolina", 
+             "south dakota", "tennessee", "texas", "utah", "vermont", 
+             "virginia", "washington", "west virginia", "wisconsin", "wyoming")
+    
+    # make sure input state names are standard
+    stopifnot(all(state_names %in% abbr | all(tolower(state_names) %in% low)))
+    
+    # determine converting from what and to what
+    if (all(nchar(state_names) == 2)){
+        from = "abbr"
+        to = "low"
+    } else {
+        state_names <- tolower(state_names) # handle big letters
+        from = "low"
+        to = "abbr"
+    }
     
     # make a lookup table to convert between lowercase and abbrivation state names
     convert_to <- get(to)
@@ -63,9 +82,10 @@ convert_state_names <- function(state_names, from, to) {
 }
 
 state_center_lon_lat <- function(){
-    # this function returns the coordinate of the center of each state so that we
-    # can plot something at the center instead of fill the whole map. 
-    # Data were downloaded with ggmap::geocoding and then fine tuned.
+    ## this function returns the coordinate of the center of each state so that we
+    ## can plot something at the center instead of fill the whole map. 
+    ## Data were downloaded with ggmap::geocoding and then fine tuned.
+    ## do NOT change or update numbers
     
     state_center_coord <- data.table(
         state = c("DC", "MS", "LA", "GA", "MD", "SC", "AL", "NC", 
@@ -94,8 +114,8 @@ state_center_lon_lat <- function(){
 
 
 city_lon_lat <- function() {
-    # This function return the longitude and latitude of cities where police 
-    # shooting death occured
+    ## This function return the longitude and latitude of cities where police 
+    ## shooting death occured
     
     # downloading city coordinates takes a long time. save the download to local 
     # computer as a csv file. When update, only download new cities that are not
@@ -135,28 +155,33 @@ city_lon_lat <- function() {
         }
     }
     city_coord <- fread("downloaded_data/city_coord.csv") %>%
-        # mistake in download, correct it manually
+        # this city points to another location, correct it manually
+        # tried again on 8/4/2017, this time geocode() gives correct result.
+        # keep the code below anyway
         .[city_state == "Rockville, GA", ":=" (lon = -83.21877, lat = 33.32764)]
 }
 
 
 identify_area <- function(latitude, longitude, state) {
-    # This function identifies locations at (latitude, longitude) as urban areas,
-    # urban clusters, or rural areas.
-    
-    # args______________________
-    # latitude, longitude : numeric 
-    #     vectors of latitude and longitude of the locations
-    # state : character
-    #     abbriation of the state where the location is in, for example "MA", "CA"
-    
-    # return____________________
-    # area_name : character
-    #     vector of area name as one of "large urban area", "small urban area",
-    #     "rural area"
+    ## This function identifies locations at (latitude, longitude) as urban areas,
+    ## urban clusters, or rural areas.
+    ##
+    ## args______________________
+    ## latitude, longitude : numeric 
+    ##     vectors of latitude and longitude of the locations
+    ## state : string
+    ##     abbriation of the state where the location is in, for example "MA", "CA"
+    ##
+    ## return____________________
+    ## area_name : character
+    ##     vector of area name as one of "urban_area", "urban_cluster",
+    ##     "rural"
+    ##
+    ## exmple________________
+    ## identify_area(33.32764, -83.21877, "GA")
     
     # get census data at block level
-    block <- get_full_geo_race(state) %>%
+    block <- get_full_geo_race(state, read_race = FALSE) %>%
         .[level_code == "100"] %>%     # level code for block is "100" instead of 101
         .[, .(lat, lon, urban_area, urban_cluster, rural)] %>%
         setkey(lat, lon)
@@ -202,21 +227,21 @@ identify_area <- function(latitude, longitude, state) {
 # prepare shooting data =======================================================
 
 read_shooting_data <- function(choose_race = "*", weapon = "*", geo_comp = "*") {
-    # read shooting data of selected race, weapon, and geo-component
-    
-    # args_______
-    # choose_race: string
-    #    race of the victim, takes values of "W", "B", "H", "A", ...,
-    #    default "*" for all races
-    # weapon: string
-    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
-    #    "knife", ..., default "*" for all weapons
-    # geo_comp: string
-    #    take values "urban_area", "urban_cluster", and "rural". default "*" for
-    #    all geo-components
-    
-    # returns_____
-    # data.table of improved shooting database
+    ## read shooting data of selected race, weapon, and geo-component
+    ##
+    ## args_______
+    ## choose_race: string
+    ##    race of the victim, takes values of "W", "B", "H", "A", ...,
+    ##    default "*" for all races
+    ## weapon: string
+    ##    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    ##    "knife", ..., default "*" for all weapons
+    ## geo_comp: string
+    ##    take values "urban_area", "urban_cluster", and "rural". default "*" 
+    ##    for all geo-components
+    ##
+    ## returns_____
+    ## data.table of improved shooting database
     
     shooting <- fread("downloaded_data/database_improved.csv") %>%
         # %like% is so cool, usage: vector %like% pattern
@@ -227,22 +252,23 @@ read_shooting_data <- function(choose_race = "*", weapon = "*", geo_comp = "*") 
 
 
 count_shooting_city <- function(choose_race = "*", weapon = "*", geo_comp = "*") {
-    # This function returns the number of selected race and weapon in each city 
-    # of selected geo-component, of known race. Unknow race cases are removed.
-    
-    # args_______
-    # choose_race: string
-    #    race of the victim, takes values of "W", "B", "H", "A", ...
-    #    default "*" for all races
-    # weapon: string
-    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
-    #    "knife", ..., default "*" for all weapons
-    # geo_comp: string
-    #    take values "urban_area", "urban_cluster", and "rural". default "*" for
-    #    all geo-components
-    
-    # return__________
-    # a data.table of the number of race killed in each city
+    ## This function returns the number of cases of selected race and weapon in  
+    ## each city of selected geo-component, of known race. Unknow race cases are 
+    ## removed.
+    ##
+    ## args_______
+    ## choose_race: string
+    ##    race of the victim, takes values of "W", "B", "H", "A", ...
+    ##    default "*" for all races
+    ## weapon: string
+    ##    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    ##    "knife", ..., default "*" for all weapons
+    ## geo_comp: string
+    ##    take values "urban_area", "urban_cluster", and "rural". default "*" for
+    ##    all geo-components
+    ##
+    ## return__________
+    ## a data.table of the number of race killed in each city
     
     # remove shooting of unknown race
     shooting <- read_shooting_data(choose_race, weapon, geo_comp) %>%
@@ -264,64 +290,68 @@ count_shooting_city <- function(choose_race = "*", weapon = "*", geo_comp = "*")
 
 
 count_shooting_state <- function(choose_race = "*", weapon = "*", geo_comp = "*") {
-    # This function calculate number of cases of police fatal shooting in each 
-    # state of selected race, weapon and geo-component
-    
-    # args_______
-    # choose_race: string
-    #    race of the victim, takes values of "W", "B", "H", "A", ...
-    #    default "*" for all races
-    # weapon: string
-    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
-    #    "knife", ..., default "*" for all weapons
-    # geo_comp: string
-    #    take values "urban_area", "urban_cluster", and "rural". default "*" for
-    #    all geo-components
-    
-    # returns_________
-    # a data.table of the number of selected race and weapon in each state
+    ## This function calculate number of cases of police fatal shooting in each 
+    ## state of selected race, weapon and geo-component
+    ##
+    ## args_______
+    ## choose_race: string
+    ##    race of the victim, takes values of "W", "B", "H", "A", ...
+    ##    default "*" for all races
+    ## weapon: string
+    ##    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    ##    "knife", ..., default "*" for all weapons
+    ## geo_comp: string
+    ##    take values "urban_area", "urban_cluster", and "rural". default "*" for
+    ##    all geo-components
+    ##
+    ## returns_________
+    ## a data.table of the number of selected race and weapon in each state
     
     # make a single columns data table of states to join by data with missing 
     # state so that the return is force to include all states
     state_dt <- data.table(
-        state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
-                  "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
-                  "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND",
-                  "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT",
-                  "VA", "WA", "WV", "WI", "WY", "DC")
+        state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", 
+                  "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", 
+                  "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", 
+                  "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", 
+                  "VT", "VA", "WA", "WV", "WI", "WY", "DC")
     )
     
     count <- read_shooting_data(choose_race, weapon, geo_comp) %>%
         .[race != ""] %>%          # remove unknown race if any
         .[, .(count = .N), by = .(state)] %>%
+        # force to include all states
+        .[state_dt, on = .(state)] %>%
+        .[is.na(count), count := 0] %>%
         .[order(-count)]
 }
 
 
 count_shooting_urban_rural <- function(choose_race = "*", weapon = "*") {
-    # This function returns a data.table of police shooting cases with victims of 
-    # selected race and weapon in urbanized area, urban clusters and rural area 
-    # of each state.
-    
-    # args_______
-    # choose_race: string
-    #    race of the victim, takes values of "W", "B", "H", "A", ...
-    #    default "*" is for all races
-    # weapon: string
-    #    weapon the victim was carrying when being shot, "unarmed", "gun", 
-    #    "knife", ..., default "*" for all weapons
-
-    # returns______
-    # a data.table of the count of police shooting in each geo-component
+    ## This function returns a data.table of police shooting cases with victims  
+    ## of selected race and weapon in urbanized area, urban clusters and rural  
+    ## area of each state.
+    ##
+    ## args_______
+    ## choose_race: string
+    ##    race of the victim, takes values of "W", "B", "H", "A", ...
+    ##    default "*" is for all races
+    ## weapon: string
+    ##    weapon the victim was carrying when being shot, "unarmed", "gun", 
+    ##    "knife", ..., default "*" for all weapons
+    ##
+    ## returns______
+    ## a data.table of the count of police shooting in each geo-component of 
+    ## each state
     
     # make a single columns data table of states to join by data with missing 
     # state so that the return is force to include all states
     state_dt <- data.table(
-        state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
-                  "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
-                  "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND",
-                  "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT",
-                  "VA", "WA", "WV", "WI", "WY", "DC")
+        state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", 
+                  "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", 
+                  "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", 
+                  "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", 
+                  "VT", "VA", "WA", "WV", "WI", "WY", "DC")
     )
     
     # count in each geo area
@@ -354,9 +384,9 @@ count_shooting_urban_rural <- function(choose_race = "*", weapon = "*") {
 # prepare voting data =========================================================
 
 vote_obama_2012 <- function(){
-    # This function returns a data.table of the percentage of people voted for 
-    # Obama in 2012 election in each state. Data from
-    # https://en.wikipedia.org/wiki/United_States_presidential_election,_2012
+    ## This function returns a data.table of the percentage of people voted for 
+    ## Obama in 2012 election in each state. Data from
+    ## https://en.wikipedia.org/wiki/United_States_presidential_election,_2012
     
     vote_obama <- data.table(
         state = c("AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", 
@@ -376,10 +406,21 @@ vote_obama_2012 <- function(){
     )
 }
 
-is_red_or_blue <- function(state_name) {
-    # determing if a state is a blue or red state
-    vote <- vote_obama_2012()
-    perc <- vote[state == state_name, perc_vote]
-    if (perc < 50) return("red")
-    else return("blue")
+is_red_or_blue <- function(state_name_vector) {
+    ## determing if each state in a vector is a blue or red state
+    ## 
+    ## args_______
+    ## state_name_vector: string
+    ##     a vector of state names in abbr such as c("MA", "RI", "TX")
+    ##
+    ## return_____
+    ## a vector of state color such as c("blue", "blue", "red")
+    
+    vote <- vote_obama_2012() %>%
+        .[state_name_vector, on = .(state)] %>%
+        # add a new color for the color of each state
+        .[perc_vote < 50, red_blue := "red"] %>%
+        .[perc_vote >= 50, red_blue := "blue"] %>%
+        # return only vector of colors
+        .[, red_blue]
 }
