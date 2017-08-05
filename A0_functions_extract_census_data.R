@@ -96,7 +96,7 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
 }
 
 
-plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7, max_size = 20) {
+plot_urban_rural_on_map <- function(state_abbr, zoom = 7, max_size = 6) {
     ## This function plot urbanized area, urban clusters, and rural area at block
     ## level of a state on google map
     ## Require internet connection to download google map
@@ -105,10 +105,6 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7, max_si
     ##
     ## args_______
     ## state_abbr: abbreviation of a state, such as "MA" and "FL"
-    ## state_full_geo: the data.table obtained from function 
-    ##     get_full_geo_race(read_race = FALSE). This function runs for a long
-    ##     time. Get it done outside of the plot_urban_rural_on_map function
-    ##     so that we can easily adgust zoom and max_size for better plot.
     ## zoom: zoom when using get_map() to download map data. Adjust accordingly.
     ## max_size: integer
     ##     maximun size of circle for number of shooting. adjust according to 
@@ -122,11 +118,17 @@ plot_urban_rural_on_map <- function(state_abbr, state_full_geo, zoom = 7, max_si
     ## plot_urban_rural_on_map("RI", RI_full_geo, zoom = 9,  max_size = 3)
     
     # block level census data
-    block <- state_full_geo %>%
+    block <- get_full_geo_race(state_abbr, read_race = FALSE) %>%
         .[level_code == "100"] %>%     # level code for block is "100" instead of 101
         .[, .(lat, lon, urban_area, urban_cluster, rural)] 
     
-    map <- get_map(location = state_abbr, zoom = zoom)  # using ggmap package
+    # get google map centered at state center position
+    state_center <- state_center_lon_lat() %>%
+        .[state == state_abbr, .(lon, lat)]
+    state_center <- as.matrix(state_center)[1,]  # %>% not working for as.matrix()
+        
+    map <- get_map(location = state_center, zoom = zoom)  # using ggmap package
+    
     ggmap(map) +         
         # make sure urban_area is the top layer and rural at bottom
         geom_point(data = block[!is.na(rural)], 
