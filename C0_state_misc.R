@@ -1,3 +1,6 @@
+# last reviewed 8/5/2017
+
+
 library(ggplot2)
 library(ggrepel)
 library(data.table)
@@ -37,6 +40,7 @@ b_ua[1, V1] / b_total[1, V1]
 
 # red state
 b_ua[2, V1] / b_total[2, V1]
+    # 0.71
 
 
 # black killed in each geo-components =========================================
@@ -64,7 +68,7 @@ b_ua[1, V1] / b_total[1, V1]
 b_ua[2, V1] / b_total[2, V1]
     # 0.82
 
-# blue and red
+# blue and red total
 ua[, sum(count)] / all_geo[, sum(count)]
     # 0.88
 

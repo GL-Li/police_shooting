@@ -12,6 +12,8 @@ Surprisingly, the analysis of the shooting database completely contradicts to th
 
 This result unexpectedly disproves the theory that racism is to blame for the large disparity of black people being killed by police. There must be other reasons behind the large disparity.
 
+This project presents the analytical result showing that blue states have larger disparity than red states. Possible causes will be discussed in next project.
+
 ## Results
 ### Disparity is larger in blue states than in red states
 
@@ -44,21 +46,6 @@ Unarmed civilians shot and killed by police officers are of particular importanc
 Again, blue states see a much larger disparity, as large as 4.66, compared to 3.02 in red states. As discussed above, bias among individual police officers is expected to add up to the disparity when the civilians are unarmed. Indeed, the disparity ratio are only 1.90 in red states and 2.88 in blue states respectively when the victims are armed. 
 
 <img src="figures/table_unarmed_and_armed_killed.png" alt="unarmed" style="width: 650px;"/>
-
-
-## Why blue states have much larger disparity
-Apparently racism is not the reason that blue states have much larger disparity. If racism were the reason, blue states, which have less severe racism, would have smaller disparity. If one insists and argues that racism play an implicit role, the relationship between racism and disparity must be so vague that it is better to find out more direct causes.
-
-In order to understand why blue states have much larger disparity, we'd better identify factors behind police violence, figure out which factors cause disparity, and then prove those particular factors are more severe in blue states than in red state. Campaign Zero, an police reform campaign, proposed [10 solutions](https://www.joincampaignzero.org/solutions/#solutionsoverview) aiming at reducing police violence. The proposed solutions cover many factors behind police violence.
-
-One factor that potentially leads to increased disparity is that police officer are protected by police union contracts from being hold accountable for wrongdoings; if there are more such protection in blue states, it might be able to explain the larger disparity in blue states. Here is the logic: a small number of bad police officers committed most of the fatal shooting. In red state, they will be punished and removed from police force; those alike will be deterred from doing so. In blue states, however, they are protected by police union and will have chance to do it again; those alike has no fear to do it. If this small number of police officers are strongly racial biased, blue states will have larger disparity. Actually, such logic has been used to blame [police brutality problem in blue states](https://goplifer.com/2016/01/22/police-brutality-is-a-blue-state-problem/)
-
-Above theory, however, is built on many assumptions, and actual police union contracts does not support it. Campaign Zero has researched [police contracts of the 100 largest US cities](http://www.checkthepolice.org/#project) for languages that protect police officers in case of wrongdoing. The protection was assigned to six categories and the times of appearance of each category in the contracts were counted. On average a city in blue states and red state has similar amount language of protection. Blue states have 10-20% more counts in two categories, which are unlikely to account for the huge difference in the disparity in blue and red states.
-
-<img src="figures/table_union_contract_protect_police.png" alt="union_contract" style="width: 750px;"/>
-
-
-Broken window policing, ending which is Campaign Zero's number one solution to fight against police brutality, will for sure lead to disparity. This strategy is to crack down on petty crimes and create a lawful environment in order to prevent more serious crimes. Under this strategy, more police forces are dispatched to troubled neighborhoods to prevent small crimes. Unfortunately, many black neighborhoods are included because of poverty, which increases encounter between police officers and black people. In addition, police officers tend to target black people in practicing this policy. These all lead to black people being more likely to be shot and killed by police. To confirm that broken window policing caused the much large disparity in blue states, however, we need data to show that blue states practice more broken window policing. 
 
 
 ## Data preparation
