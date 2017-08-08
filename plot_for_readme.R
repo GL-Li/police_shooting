@@ -15,5 +15,5 @@ plot_disparity_grouped_state()
 plot_ratio_vote("UA")
 
 # map of shooting death of all races in Georgia ===============================
-plot_shooting_on_state_map(state = "GA", center = "Macon, GA, US", max_size = 20)
+plot_shooting_on_state_map(state = "GA", max_size = 20)
 

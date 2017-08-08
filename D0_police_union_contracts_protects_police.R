@@ -1,3 +1,5 @@
+# last reviewed 8/5/2017
+
 # to analyze how police union contracts protect police officers from being held
 # accountable. Original data and analysis are in this website
 # http://www.checkthepolice.org/#review
@@ -43,7 +45,8 @@ largest_100 <- fread("downloaded_data/largest_100_cities_2015.csv", sep = "\n",
     .[city == "New York City", city := "New York"] %>%
     .[city == "Washington", city := "Washington D.C."] %>%
     # determine blue or red state
-    .[, red_blue := is_red_or_blue(state)]
+    .[, red_blue := is_red_or_blue(state)] %>%
+    .[, city_state := paste0(city, ", ", state)]
 
 
 
@@ -125,26 +128,96 @@ get_weighted_avg_count <- function(){
 }
 
 
+get_avg_count_72 <- function(){
+    ## average count of the 72 cities
+    
+    # total population in blue and red cities of the 72 cities
+    c72 <- report[!duplicated(city), .(city, state)] %>%
+        largest_100[., on = .(city)]
+    n_blue <- c72[, .N, by = red_blue][1, N]
+    n_red <- c72[, .N, by = red_blue][2, N]
+    
+    # average count of category in blue and red state
+    avg_blue <- report[, .(blue = round(.N / n_blue, 2)), 
+                       by = .(red_blue, category)] %>%
+        .[red_blue == "blue"]
+    avg_red <- report[, .(red = round(.N / n_red, 2)), 
+                      by = .(red_blue, category)] %>%
+        .[red_blue == "red"]
+    
+    avg <- avg_blue[avg_red, on = .(category)] %>%
+        .[, .(category, blue, red)]
+    
+    # add a new row of total of all categories
+    all_cat <- lapply(avg[, 2:3], sum) %>%
+        setDT() %>%
+        .[, category := "total"] %>%
+        setcolorder(c("category", "blue", "red"))
+    
+    # conbine avg and total
+    rbindlist(list(avg, all_cat))
+}
+
+get_weighted_avg_72 <- function(){
+    ## population weighted average count of the 72 cities
+    
+    # total population in blue and red cities of the 72 cities
+    c72 <- report[!duplicated(city), .(city, state)] %>%
+        largest_100[., on = .(city)]
+    pop_blue <- c72[, sum(population), by = red_blue][1, V1]
+    pop_red <- c72[, sum(population), by = red_blue][2, V1]
+    
+    # average count of category in blue and red state
+    avg_blue <- report[, .(blue = round(sum(population) / pop_blue, 2)), 
+                       by = .(red_blue, category)] %>%
+        .[red_blue == "blue"]
+    avg_red <- report[, .(red = round(sum(population) / pop_red, 2)), 
+                      by = .(red_blue, category)] %>%
+        .[red_blue == "red"]
+    
+    avg <- avg_blue[avg_red, on = .(category)] %>%
+        .[, .(category, blue, red)]
+    
+    # add a new row of total of all categories
+    all_cat <- lapply(avg[, 2:3], sum) %>%
+        setDT() %>%
+        .[, category := "total"] %>%
+        setcolorder(c("category", "blue", "red"))
+    
+    # conbine avg and total
+    rbindlist(list(avg, all_cat))
+}
+
+
+
 # average count ==============================================================
-avg <- get_avg_count()
+# average over all 100 largest cities
+
+avg <- get_avg_count()[order(category)]
     #                                category blue  red
-    # 1:            Erases misconduct records 0.83 0.52
-    # 2: Gives officers unfair access to info 0.64 0.83
-    # 3:          Limits oversight/discipline 1.48 1.24
-    # 4:     Requires city pay for misconduct 0.76 0.50
-    # 5:      Restricts/delays interrogations 1.26 1.21
-    # 6:              Disqualifies complaints 0.33 0.36
+    # 1:              Disqualifies complaints 0.33 0.36
+    # 2:            Erases misconduct records 0.83 0.52
+    # 3: Gives officers unfair access to info 0.64 0.83
+    # 4:          Limits oversight/discipline 1.48 1.24
+    # 5:     Requires city pay for misconduct 0.76 0.50
+    # 6:      Restricts/delays interrogations 1.26 1.21
     # 7:                                total 5.30 4.66
 
 
-weighted_avg <- get_weighted_avg_count()
+weighted_avg <- get_weighted_avg_count()[order(category)]
     #                                category blue  red
-    # 1:            Erases misconduct records 1.03 0.65
-    # 2: Gives officers unfair access to info 0.64 0.93
-    # 3:          Limits oversight/discipline 1.25 1.71
-    # 4:     Requires city pay for misconduct 0.68 0.59
-    # 5:      Restricts/delays interrogations 1.14 1.44
-    # 6:              Disqualifies complaints 0.22 0.58
+    # 1:              Disqualifies complaints 0.22 0.58
+    # 2:            Erases misconduct records 1.03 0.65
+    # 3: Gives officers unfair access to info 0.64 0.93
+    # 4:          Limits oversight/discipline 1.25 1.71
+    # 5:     Requires city pay for misconduct 0.68 0.59
+    # 6:      Restricts/delays interrogations 1.14 1.44
     # 7:                                total 4.96 5.90
 
+
+
+# shooting in 100 alrgest cities ==============================================
+shooting_100_city <- read_shooting_data() %>%
+    .[race != ""] %>%
+    .[largest_100, on = .(city_state)]
 
