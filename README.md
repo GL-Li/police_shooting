@@ -4,13 +4,13 @@ This project analyzes the [Washington Post police shooting database](https://git
 ## Introduction
 Black people are more than twice as likely to be shot and killed by police officers as non-black people. In the two an half years from January 2015 to June 2017, 2452 people were fatally shot by on-duty police officers, as recorded in the Washington Post police shooting database. Among those killed whose races are known, 26.3% are black people, while black people are only [13.3% of the total population](https://www.census.gov/quickfacts/), that is, black people are 2.33 times as likely to be killed as non-black people. 
 
-Racism has been blamed for this disparity and it is not without reason. After years of fighting for equality, explicit racism has been much eliminated from written laws and policies. It is, however, still wide spread in people's minds as prejudice. In addition, implicit racism is still exists in the practices of organizations and institutions. Racism increases the likelihood of black people being shot by police officers.  First, it causes bias among individual police officers, which makes them more likely to shoot at black people when facing the same level of threat. Second, it leads to more police interactions with black people. For example, racism is behind systemic police practices such as car stop that single out black people; racism is also behind social issues including urban poverty that leads to higher crime rate among black people.  
+Racism has been blamed for this disparity and it is not without reason. After years of fighting for equality, explicit racism has been much eliminated from written laws and policies. It is, however, still wide spread in people's minds as prejudice. In addition, implicit racism is still exists in the practices of organizations and institutions. Racism increases the likelihood of black people being shot by police officers in two ways.  First, it causes bias among individual police officers, which makes them more likely to shoot at black people when facing the same level of threat. Second, it leads to more police interactions with black people. For example, racism is behind systemic police practices such as car stop that single out black people; racism is also behind social issues including urban poverty that leads to higher crime rate among black people.  
 
 The question is how to prove that racism is the major cause of the disparity in police shooting. This is not a question to be answered lightly. Instead we examine a more specific hypothesis derived from the question: if racism does play a major role, we would expect smaller disparity in blue states than in red states, as black people are believed to face less discrimination in blue states. The Washington Post police shooting database provides opportunity to test this hypothesis.
 
 Surprisingly, the analysis of the shooting database completely contradicts to the hypothesis: the disparity is actually much larger, rather than smaller, in blue states than in red states. In large urban areas, black people are 1.96 time as likely to be fatally shot by police as non-black people in red states while it is 3.00 times in blue states. For those unarmed victims, the disparity is 3.02 in red states and as high as 4.66 in blue states. 
 
-This result unexpectedly disproves the theory that racism is to blame for black people being more likely to be shot and killed by police officer than non-black people. There must be other reasons behind the large disparity.
+This result unexpectedly disproves the theory that racism is to blame for black people being more likely to be shot and killed by police officer than non-black people. There must be other reasons behind this large disparity.
 
 This project presents the analytic result showing that blue states have larger disparity than red states. Possible causes will be discussed in next project.
 
@@ -50,13 +50,13 @@ Again, blue states see a much larger disparity, as large as 4.66, compared to 3.
 
 ## Data preparation
 ### Fatal police shooting in large urban area, small urban area, and rural area
-We use 2010 national census data to determine weather a shooting location is a large urban area, small urban area, or rural area. The census data assigns each census block to one of three types of geo-components: urbanized area (large urban area), urban cluster (small urban area) and rural area. The location of the shootings provided in the Washington Post database is down to city/town level. The geo-component of a shooting location is determined by the geo-component of the closest census block to the city/town.
+We use 2010 national census data to determine weather a shooting location is a large urban area, small urban area, or rural area. The census data assigns each census block to one of three types of geo-components: urbanized area (large urban area), urban cluster (small urban area) and rural area. The location of the shootings provided in the Washington Post database is down to city/town level. The longitute and latitute of the cities/towns are downloaded from Google Map. The geo-component of a shooting location is determined by the geo-component of the closest census block to the geographic coordiante of the city/town.
 
 <img src="figures/block_level_all_killed_GA_map.png" alt="Georgia map example" style="width: 800px;"/>
 
-The determination of shootings in small urban area and rural area may not be accurate. As the location is only down to the city or town level, some shooting that took place in rural area will be marked as small urban area, unless the city/town itself belongs to a rural area. We need more detailed location information to get reliable count. 
+The identification of shootings in small urban area and rural area may not be accurate. As the location is only down to the city or town level, some shooting that took place in rural area will be marked as small urban area, unless the city/town itself belongs to a rural area. We need more detailed location information to get a reliable count. 
 
-This miscount, however, does not affect the count of shooting in large urban area. The combined count in rural and small urban area is also reliable. 
+This miscount, however, does not affect much of the count of shooting in large urban area. The combined count in rural and small urban area is also reliable. 
 
 <img src="figures/table_number_killed_in_each_geo_components.png" alt="unarmed" style="width: 750px;"/>
 
