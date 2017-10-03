@@ -48,12 +48,12 @@ get_full_geo_race <- function(state_abbr_vector, zero_to_NA = TRUE,
         
         # read data
         print("read geofile")
-        geo_code <- fread(geofile, sep = "\n", header = FALSE)
+        geo_code <- fread(geofile, sep = "\n", header = FALSE, encoding = "Latin-1")
         # replace unicodes of Spainish letters in geofile of these state with a
         # "9" (can be any other readable letters)
-        if (state_abbr %in% c("US", "TX", "NM", "CA", "AZ", "CO")) {
-            geo_code[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
-        }
+        # if (state_abbr %in% c("US", "TX", "NM", "CA", "AZ", "CO")) {
+        #    geo_code[, V1 := gsub("[\xf1\xe1\xe9\xed\xfc\xf3\xfa]", "9", V1)]
+        # }
         
         # extract data
         population <- geo_code[, 
